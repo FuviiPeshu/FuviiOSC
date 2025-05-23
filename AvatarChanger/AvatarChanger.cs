@@ -1,4 +1,7 @@
-﻿using VRCOSC.App.SDK.Modules;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using VRCOSC.App.SDK.Modules;
 
 namespace FuviiOSC.AvatarChanger;
 
@@ -9,7 +12,22 @@ public class AvatarChangerModule : Module
 {
     protected override void OnPreLoad()
     {
+        CreateCustomSetting(AvatarChangerSetting.AvatarChangerTriggerInstances, new AvatarChangerModuleSetting());
+
         CreateState(AvatarChangerState.Default, "Default");
+
+        CreateGroup("AvatarChangerTriggers", AvatarChangerSetting.AvatarChangerTriggerInstances);
+    }
+
+    protected override async Task<bool> OnModuleStart()
+    {
+        ChangeState(AvatarChangerState.Default);
+        foreach (TriggerQueryableParameter? queryableParameter in GetSettingValue<List<AvatarChangerTrigger>>(AvatarChangerSetting.AvatarChangerTriggerInstances).SelectMany(trigger => trigger.Triggers))
+        {
+            await queryableParameter.Init();
+        }
+
+        return true;
     }
 
     private enum AvatarChangerSetting
