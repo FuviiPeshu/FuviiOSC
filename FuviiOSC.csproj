@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net8.0-windows10.0.26100.0</TargetFramework>
+		<UseWPF>true</UseWPF>
+		<Nullable>enable</Nullable>
+		<WindowsSdkPackageVersion>10.0.26100.1</WindowsSdkPackageVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="VolcanicArts.VRCOSC.SDK" Version="2025.327.0" />
+	</ItemGroup>
+
+	<!--> This is a post build event that copies your module assembly to the local package directory for VRCOSC <-->
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Exec Command="copy /Y &quot;$(TargetDir)$(TargetName).dll&quot; &quot;%25appdata%25\VRCOSC\packages\local\$(TargetName).dll&quot;" />
+	</Target>
+</Project>
