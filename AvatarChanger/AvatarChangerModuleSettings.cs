@@ -12,7 +12,7 @@ namespace FuviiOSC.AvatarChanger;
 public class AvatarChangerModuleSetting : ListModuleSetting<AvatarChangerTrigger>
 {
     public AvatarChangerModuleSetting()
-        : base("Avatars", "Add, edit, and remove avatar change triggers", typeof(AvatarChangerModuleSettingView), [])
+        : base("Trigger list", "Add, edit or remove avatar change triggers", typeof(AvatarChangerModuleSettingView), [])
     {
     }
 
@@ -29,7 +29,7 @@ public class AvatarChangerTrigger : IEquatable<AvatarChangerTrigger>
     public Observable<string> Name { get; set; } = new("New trigger");
 
     [JsonProperty("avatar_id")]
-    public Observable<string> AvatarId { get; set; } = new("avtr_26187637-0c30-4a09-86e1-bc928c07309e");
+    public Observable<string> AvatarId { get; set; } = new("avtr_");
 
     [JsonProperty("trigger_params")]
     public ObservableCollection<TriggerQueryableParameter> TriggerParams { get; set; } = [];

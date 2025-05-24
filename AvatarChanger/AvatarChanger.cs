@@ -2,11 +2,12 @@
 using System.Linq;
 using System.Threading.Tasks;
 using VRCOSC.App.SDK.Modules;
+using VRCOSC.App.SDK.Parameters;
 
 namespace FuviiOSC.AvatarChanger;
 
 [ModuleTitle("Avatar Changer")]
-[ModuleDescription("Handles avatar change via OSC")]
+[ModuleDescription("Handles avatar change via OSC (IMPORTANT NOTE: Works only for favourited avatars until VRChat fixes the bug)")]
 [ModuleType(ModuleType.Generic)]
 public class AvatarChangerModule : Module
 {
@@ -16,18 +17,35 @@ public class AvatarChangerModule : Module
 
         CreateState(AvatarChangerState.Default, "Default");
 
-        CreateGroup("AvatarChangerTriggers", AvatarChangerSetting.AvatarChangerTriggerInstances);
+        CreateGroup("Avatar Change Triggers", AvatarChangerSetting.AvatarChangerTriggerInstances);
     }
 
     protected override async Task<bool> OnModuleStart()
     {
         ChangeState(AvatarChangerState.Default);
-        foreach (TriggerQueryableParameter? queryableParameter in GetSettingValue<List<AvatarChangerTrigger>>(AvatarChangerSetting.AvatarChangerTriggerInstances).SelectMany(trigger => trigger.Triggers))
+        foreach (TriggerQueryableParameter? queryableParameter in GetSettingValue<List<AvatarChangerTrigger>>(AvatarChangerSetting.AvatarChangerTriggerInstances).SelectMany(trigger => trigger.TriggerParams))
         {
             await queryableParameter.Init();
         }
 
         return true;
+    }
+
+    protected override void OnAnyParameterReceived(ReceivedParameter receivedParameter)
+    {
+        List<AvatarChangerTrigger> triggers = GetSettingValue<List<AvatarChangerTrigger>>(AvatarChangerSetting.AvatarChangerTriggerInstances);
+        foreach (AvatarChangerTrigger trigger in triggers)
+        {
+            foreach (TriggerQueryableParameter queryableParameter in trigger.TriggerParams.Where(param => param.Name.Value == receivedParameter.Name))
+            {
+                VRCOSC.App.SDK.Parameters.Queryable.QueryResult result = queryableParameter.Evaluate(receivedParameter);
+                if (result != null && result.JustBecameValid)
+                {
+                    string avatarId = trigger.AvatarId.Value;
+                    ChangeAvatar(avatarId);
+                }
+            }
+        }
     }
 
     private enum AvatarChangerSetting
