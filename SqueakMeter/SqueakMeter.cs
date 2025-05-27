@@ -1,4 +1,7 @@
 using System;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows.Threading;
 using NAudio.CoreAudioApi;
 using NAudio.Dsp;
 using NAudio.Wave;
@@ -32,13 +35,17 @@ public class SqueakMeterModule : Module
     private float previousDirection = 0;
     private float volume = 0;
     private float previousVolume = 0;
-    private readonly MMDeviceEnumerator enumerator = new();
-    private MMDevice? activeDevice;
-    private WasapiLoopbackCapture? capture;
     private int bytesPerSample;
+
+    public AudioDeviceNotificationClient? notificationClient = new AudioDeviceNotificationClient();
+    public readonly MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
+    public MMDevice? activeDevice;
+    public WasapiLoopbackCapture? capture;
 
     protected override void OnPreLoad()
     {
+        enumerator.RegisterEndpointNotificationCallback(notificationClient);
+
         CreateSlider(SqueakMeterSetting.SmoothScalar, "Smooth scalar", "Scalar for smoothing values (default: 0.16)", 0.16f, 0.0f, 0.99f, 0.01f);
         CreateSlider(SqueakMeterSetting.Gain, "Gain", "Scalar for volume (default: 2)", 2.0f, 0.1f, 10, 0.1f);
         CreateSlider(SqueakMeterSetting.BassBoost, "Bass boost", "Scalar for bass (default: 32)", 32, 1, 100, 1);
@@ -51,7 +58,30 @@ public class SqueakMeterModule : Module
         RegisterParameter<float>(SqueakMeterParameter.Treble, "VRCOSC/SqueakMeter/Treble", ParameterMode.Write, "Treble", "Sends the normalized amplitude (volume) of the treble frequency band (4000 – 20000 Hz)\nRange: 0 - 1");
         RegisterParameter<float>(SqueakMeterParameter.Direction, "VRCOSC/SqueakMeter/Direction", ParameterMode.Write, "Direction", "Sends value depending on the audio direction (stereo balance)\nRange: 0 - 1 (where 0 = left, 0.5 = center, 1 = right)");
 
-        SetUpAudio();
+        SetRuntimeView(typeof(AudioDeviceModuleRuntimeView));
+    }
+
+    protected override Task OnModuleStop()
+    {
+        // Unregister audio device notification callback
+        if (notificationClient != null)
+        {
+            enumerator.UnregisterEndpointNotificationCallback(notificationClient);
+            notificationClient = null;
+        }
+
+        // Clean up audio capture
+        if (capture != null)
+        {
+            capture.DataAvailable -= OnDataAvailable;
+            capture.StopRecording();
+            capture.Dispose();
+            capture = null;
+        }
+        activeDevice?.Dispose();
+        activeDevice = null;
+
+        return Task.CompletedTask;
     }
 
     private void OnDataAvailable(object? sender, WaveInEventArgs args)
@@ -208,60 +238,52 @@ public class SqueakMeterModule : Module
         }
         catch (Exception error)
         {
-            Log($"Audio module update failed: {error}");
+            LogDebug($"Audio module update failed: {error}");
             enabled = false;
         }
     }
 
-    public void SetUpAudio()
+    public void SetCaptureDevice(string deviceId)
     {
-        // Get the default audio output device
-        MMDevice? newDevice = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-
-        try
+        Dispatcher.CurrentDispatcher.Invoke(() =>
         {
-            // If the device and capture are already set up and running, do nothing
-            if (newDevice != null && activeDevice != null && activeDevice.FriendlyName == newDevice.FriendlyName &&
-                capture is { CaptureState: CaptureState.Capturing })
+            MMDevice? device = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active).First(d => d.ID == deviceId);
+
+            try
             {
-                return;
-            }
+                LogDebug($"Setting capture device: {device.FriendlyName} ({device.ID})");
+                if (device == null)
+                    throw new ArgumentNullException(nameof(device));
 
-            // Clean up previous capture and device
-            if (capture != null)
+                // Clean up previous capture and device
+                if (capture != null)
+                {
+                    capture.DataAvailable -= OnDataAvailable;
+                    capture.StopRecording();
+                    capture.Dispose();
+                    capture = null;
+                }
+
+                activeDevice?.Dispose();
+                activeDevice = device;
+
+                if (activeDevice.AudioEndpointVolume.HardwareSupport == 0)
+                    throw new NotSupportedException($"Selected device '{activeDevice.FriendlyName}' does not support capturing.");
+
+                capture = new WasapiLoopbackCapture(activeDevice);
+                capture.DataAvailable += OnDataAvailable;
+                capture.WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
+                bytesPerSample = capture.WaveFormat.BitsPerSample / capture.WaveFormat.BlockAlign;
+                capture.StartRecording();
+                enabled = true;
+            }
+            catch (Exception error)
             {
-                capture.DataAvailable -= OnDataAvailable;
-                capture.StopRecording();
-                capture.Dispose();
-                capture = null;
+                LogDebug($"Audio setup failed: {error.Message}");
+                activeDevice = null;
+                enabled = false;
             }
-
-            activeDevice?.Dispose();
-            activeDevice = newDevice;
-            if (activeDevice == null)
-            {
-                return;
-            }
-
-            // Check if the device supports capturing
-            if (activeDevice.AudioEndpointVolume.HardwareSupport == 0)
-            {
-                throw new NotSupportedException($"Selected device '{activeDevice.FriendlyName}' does not support capturing."); // covers up crash when virtual audio device is selected
-            }
-
-            // Set up new capture
-            capture = new WasapiLoopbackCapture(activeDevice);
-            capture.DataAvailable += OnDataAvailable;
-            capture.WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2); // 48kHz stereo float
-            bytesPerSample = capture.WaveFormat.BitsPerSample / capture.WaveFormat.BlockAlign;
-
-            capture.StartRecording();
-        }
-        catch (Exception error)
-        {
-            Log($"Audio setup failed: {error}");
-            enabled = false;
-        }
+        });
     }
 
     // Limit value to the range [0.0, 1.0] with a minimum threshold of 0.01 to avoid flickering
@@ -282,7 +304,7 @@ public class SqueakMeterModule : Module
     private int GetMidBoost() => GetSettingValue<int>(SqueakMeterSetting.MidBoost);
     private int GetTrebleBoost() => GetSettingValue<int>(SqueakMeterSetting.TrebleBoost);
 
-    private enum SqueakMeterSetting
+    public enum SqueakMeterSetting
     {
         SmoothScalar,
         Gain,
