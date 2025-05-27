@@ -12,13 +12,13 @@ public record AudioDeviceInfo(string ID, string FriendlyName);
 
 public class AudioDeviceNotificationClient : IMMNotificationClient
 {
-	public event Action? DevicesChanged;
+    public event Action? DevicesChanged;
 
-	public void OnDeviceStateChanged(string deviceId, DeviceState newState) => DevicesChanged?.Invoke();
-	public void OnDeviceAdded(string pwstrDeviceId) => DevicesChanged?.Invoke();
-	public void OnDeviceRemoved(string deviceId) => DevicesChanged?.Invoke();
-	public void OnDefaultDeviceChanged(DataFlow flow, Role role, string defaultDeviceId) => DevicesChanged?.Invoke();
-	public void OnPropertyValueChanged(string pwstrDeviceId, PropertyKey key) => DevicesChanged?.Invoke();
+    public void OnDeviceStateChanged(string deviceId, DeviceState newState) => DevicesChanged?.Invoke();
+    public void OnDeviceAdded(string deviceId) => DevicesChanged?.Invoke();
+    public void OnDeviceRemoved(string deviceId) => DevicesChanged?.Invoke();
+    public void OnDefaultDeviceChanged(DataFlow flow, Role role, string defaultDeviceId) => DevicesChanged?.Invoke();
+    public void OnPropertyValueChanged(string deviceId, PropertyKey key) => DevicesChanged?.Invoke();
 }
 
 public partial class AudioDeviceModuleRuntimeView
@@ -26,30 +26,27 @@ public partial class AudioDeviceModuleRuntimeView
     public SqueakMeterModule Module { get; }
     public ObservableCollection<AudioDeviceInfo> AudioDevices { get; } = new();
 
-	public AudioDeviceModuleRuntimeView(SqueakMeterModule module)
+    public AudioDeviceModuleRuntimeView(SqueakMeterModule module)
     {
-		InitializeComponent();
+        InitializeComponent();
         DataContext = this;
 
         Module = module;
         if (Module.notificationClient != null)
         {
-            Module.notificationClient.DevicesChanged += OnAudioDevicesChanged;
+            Module.notificationClient.DevicesChanged += HandleUpdateDeviceList;
         }
         else
         {
             Module.notificationClient = new AudioDeviceNotificationClient();
-            Module.notificationClient.DevicesChanged += OnAudioDevicesChanged;
+            Module.notificationClient.DevicesChanged += HandleUpdateDeviceList;
         }
-        OnAudioDevicesChanged();
+        HandleUpdateDeviceList();
     }
 
-	public MMDeviceCollection GetAudioOutputDevices()
-	{
-        return Module.enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
-	}
+    public MMDeviceCollection GetAudioOutputDevices() => Module.enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
 
-    public void OnAudioDevicesChanged()
+    public void HandleUpdateDeviceList()
     {
         try
         {
@@ -65,14 +62,11 @@ public partial class AudioDeviceModuleRuntimeView
                 // Update UI with the new list of devices
                 AudioDevices.Clear();
                 foreach (MMDevice device in audioDevices)
-                {
                     AudioDevices.Add(new AudioDeviceInfo(device.ID, device.FriendlyName));
-                }
+
                 // Reset audio device to the first device if audio device is no longer available
                 if (Module.activeDevice == null || !audioDevices.Any(d => d.ID == Module.activeDevice.ID))
-                {
                     Module.activeDevice = audioDevices[0];
-                }
             });
         }
         catch (Exception error)
@@ -81,7 +75,7 @@ public partial class AudioDeviceModuleRuntimeView
         }
     }
 
-	private void DeviceSelection_OnLostMouseCapture(object sender, MouseEventArgs e)
+    private void DeviceSelection_OnLostMouseCapture(object sender, MouseEventArgs e)
     {
     }
 
@@ -91,9 +85,8 @@ public partial class AudioDeviceModuleRuntimeView
         {
             ComboBox comboBox = (ComboBox)sender;
             string? selectedId = (string)comboBox.SelectedValue;
-            if (selectedId != null) {
+            if (selectedId != null)
                 Module.SetCaptureDevice(selectedId);
-            }
         });
     }
 }
