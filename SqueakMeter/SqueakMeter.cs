@@ -187,15 +187,16 @@ public class SqueakMeterModule : Module
         }
     }
 
-    public void SetCaptureDevice(string deviceId)
+    public MMDeviceCollection GetAudioOutputDevices() => enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+
+    public void SetCaptureDevice(string? deviceId)
     {
         Dispatcher.CurrentDispatcher.Invoke(() =>
         {
-            MMDevice? device = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active).First(d => d.ID == deviceId);
+            MMDevice? device = GetAudioOutputDevices().First(d => d.ID == deviceId);
 
             try
             {
-                LogDebug($"Setting capture device: {device.FriendlyName} ({device.ID})");
                 if (device == null)
                     throw new ArgumentNullException(nameof(device));
 
@@ -224,6 +225,7 @@ public class SqueakMeterModule : Module
             catch (Exception error)
             {
                 LogDebug($"Audio setup failed: {error.Message}");
+                notificationClient?.OnSelectedDeviceError(deviceId ?? "unknown", $"Audio setup failed: {error.Message}");
                 activeDevice = null;
                 enabled = false;
             }
