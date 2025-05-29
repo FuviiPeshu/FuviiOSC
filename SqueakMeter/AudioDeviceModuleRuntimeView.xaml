@@ -21,7 +21,18 @@
             Background="{StaticResource CBackground3}"
             FontSize="16"
             VerticalAlignment="Top"
-            Margin="0 5" />
+            Margin="0 5">
+            <ComboBox.ItemContainerStyle>
+                <Style TargetType="ComboBoxItem">
+                    <Setter Property="IsEnabled" Value="True"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsEnabled}" Value="False">
+                            <Setter Property="IsEnabled" Value="False"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ComboBox.ItemContainerStyle>
+        </ComboBox>
         <TextBlock
             Text="{Binding ErrorMessage}"
             Foreground="Red"

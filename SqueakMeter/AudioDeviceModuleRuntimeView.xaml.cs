@@ -10,7 +10,7 @@ using VRCOSC.App.Utils;
 
 namespace FuviiOSC.SqueakMeter;
 
-public record AudioDeviceInfo(string ID, string FriendlyName);
+public record AudioDeviceInfo(string ID, string FriendlyName, bool IsEnabled = true);
 
 public class AudioDeviceNotificationClient : IMMNotificationClient
 {
@@ -62,6 +62,13 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
 
     public void DeviceErrorOccurred(string deviceId, string errorMessage)
     {
+        AudioDeviceInfo? device = AudioDevices.FirstOrDefault(d => d.ID == deviceId);
+        if (device != null)
+        {
+            int index = AudioDevices.IndexOf(device);
+            AudioDevices[index] = device with { IsEnabled = false };
+        }
+        SelectedDeviceId.Value = String.Empty;
         ErrorMessage = errorMessage;
     }
 
