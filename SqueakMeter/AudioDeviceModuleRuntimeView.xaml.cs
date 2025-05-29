@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using NAudio.CoreAudioApi;
@@ -46,6 +47,21 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
         }
     }
 
+    public ObservableCollection<AudioDeviceInfo> DisabledDeviceParams { get; } = new();
+
+    public void RemoveDisabledDevice(object sender, RoutedEventArgs e)
+    {
+        FrameworkElement element = (FrameworkElement)sender;
+        AudioDeviceInfo device = (AudioDeviceInfo)element.Tag;
+
+        if (device != null)
+        {
+            int index = AudioDevices.IndexOf(device);
+            AudioDevices[index] = device with { IsEnabled = true };
+            DisabledDeviceParams.Remove(device);
+        }
+    }
+
     public AudioDeviceModuleRuntimeView(SqueakMeterModule module)
     {
         InitializeComponent();
@@ -67,6 +83,7 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
         {
             int index = AudioDevices.IndexOf(device);
             AudioDevices[index] = device with { IsEnabled = false };
+            DisabledDeviceParams.Add(AudioDevices[index]);
         }
         SelectedDeviceId.Value = String.Empty;
         ErrorMessage = errorMessage;
