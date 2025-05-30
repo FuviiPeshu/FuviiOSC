@@ -11,7 +11,7 @@ using VRCOSC.App.SDK.Parameters;
 namespace FuviiOSC.SqueakMeter;
 
 [ModuleTitle("Squeak Meter")]
-[ModuleDescription("Listens to the selected audio output device and provides OSC parameters for volume, frequencies and direction. To select audio go to the 'Run' tab")]
+[ModuleDescription("Listens to the selected audio output device and provides OSC parameters for volume, frequencies and direction. To select audio device go to the 'Run' tab")]
 [ModuleType(ModuleType.Generic)]
 public class SqueakMeterModule : Module
 {

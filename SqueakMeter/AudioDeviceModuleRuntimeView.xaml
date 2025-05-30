@@ -8,7 +8,8 @@
     mc:Ignorable="d"
     xmlns:local="clr-namespace:FuviiOSC.SqueakMeter">
     <UserControl.Resources>
-        <local:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        <local:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
+        <local:AlternationIndexToVisibilityConverter x:Key="AlternationIndexToVisibilityConverter" />
     </UserControl.Resources>
     <StackPanel>
         <ComboBox
@@ -42,17 +43,38 @@
             FontSize="16"
             Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVisibilityConverter}}" />
         <GroupBox Foreground="{StaticResource CForeground1}" Header="Disabled Audio Outputs" Margin="0,10,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalAlignment="Center" VerticalContentAlignment="Center">
-            <ListBox x:Name="DisabledDevicesList" ItemsSource="{Binding DisabledDevices}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalAlignment="Center" VerticalContentAlignment="Center">
+            <ListBox x:Name="DisabledDevicesList" ItemsSource="{Binding DisabledDevices}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalAlignment="Center" VerticalContentAlignment="Center" AlternationCount="1000">
+                <ListBox.Resources>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <StackPanel>
+                                        <Border
+                                            x:Name="Separator"
+                                            Height="2"
+                                            Margin="0,2,0,2"
+                                            Background="#33000000"
+                                            Visibility="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=(ItemsControl.AlternationIndex), Converter={StaticResource AlternationIndexToVisibilityConverter}}"/>
+                                        <ContentPresenter />
+                                    </StackPanel>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.Resources>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Grid HorizontalAlignment="Stretch" VerticalAlignment="Center">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="{Binding FriendlyName}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" FontSize="16" FontWeight="Regular" HorizontalAlignment="Stretch" VerticalAlignment="Center" TextAlignment="Left" />
-                            <core:IconButton Grid.Column="1" ButtonColour="Red" Icon="Solid_Minus" Width="25" Height="25" Click="RemoveDisabledDevice" HorizontalAlignment="Right" VerticalAlignment="Center" Tag="{Binding}" />
-                        </Grid>
+                        <Border Padding="4,0,0,0">
+                            <Grid HorizontalAlignment="Stretch" VerticalAlignment="Center">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding FriendlyName}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" FontSize="16" FontWeight="Regular" HorizontalAlignment="Stretch" VerticalAlignment="Center" TextAlignment="Left" />
+                                <core:IconButton Grid.Column="1" ButtonColour="Red" Icon="Solid_Minus" Width="25" Height="25" Click="RemoveDisabledDevice" HorizontalAlignment="Right" VerticalAlignment="Center" Tag="{Binding}" />
+                            </Grid>
+                        </Border>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
