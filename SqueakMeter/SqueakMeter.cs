@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Threading;
@@ -10,13 +11,12 @@ using VRCOSC.App.SDK.Parameters;
 namespace FuviiOSC.SqueakMeter;
 
 [ModuleTitle("Squeak Meter")]
-[ModuleDescription("Listens to the default audio output device and provides OSC parameters for volume, frequencies and direction")]
+[ModuleDescription("Listens to the selected audio output device and provides OSC parameters for volume, frequencies and direction. To select audio go to the 'Run' tab")]
 [ModuleType(ModuleType.Generic)]
 public class SqueakMeterModule : Module
 {
     private bool enabled = true;
     private bool shouldUpdate;
-
     private float bass;
     private float bassSmoothed;
     private float bassSmoothedPrevious;
@@ -41,6 +41,11 @@ public class SqueakMeterModule : Module
     public MMDevice? activeDevice;
     public WasapiLoopbackCapture? capture;
 
+    [ModulePersistent("disabledDeviceList")]
+    public List<AudioDeviceInfo> disabledDeviceList { get; set; } = [];
+    [ModulePersistent("selectedDevice")]
+    public AudioDeviceInfo? selectedDevice { get; set; } = null;
+
     protected override void OnPreLoad()
     {
         enumerator.RegisterEndpointNotificationCallback(notificationClient);
@@ -60,25 +65,39 @@ public class SqueakMeterModule : Module
         SetRuntimeView(typeof(AudioDeviceModuleRuntimeView));
     }
 
+    protected override Task<bool> OnModuleStart()
+    {
+        if (selectedDevice != null)
+            SetCaptureDevice(selectedDevice.ID);
+
+        return Task.FromResult(true);
+    }
+
     protected override Task OnModuleStop()
     {
-        // Unregister audio device notification callback
-        if (notificationClient != null)
+        try
         {
-            enumerator.UnregisterEndpointNotificationCallback(notificationClient);
-            notificationClient = null;
-        }
+            // Unregister audio device notification callback
+            if (notificationClient != null)
+            {
+                enumerator.UnregisterEndpointNotificationCallback(notificationClient);
+                notificationClient = null;
+            }
 
-        // Clean up audio capture
-        if (capture != null)
+            // Clean up audio capture
+            if (capture != null)
+            {
+                capture.DataAvailable -= OnDataAvailable;
+                capture.StopRecording();
+                capture.Dispose();
+                capture = null;
+            }
+            activeDevice?.Dispose();
+            activeDevice = null;
+        } catch (Exception error)
         {
-            capture.DataAvailable -= OnDataAvailable;
-            capture.StopRecording();
-            capture.Dispose();
-            capture = null;
+            LogDebug($"Error during module stop: {error.Message}");
         }
-        activeDevice?.Dispose();
-        activeDevice = null;
 
         return Task.CompletedTask;
     }
@@ -182,7 +201,7 @@ public class SqueakMeterModule : Module
         }
         catch (Exception error)
         {
-            LogDebug($"Audio module update failed: {error}");
+            LogDebug($"Audio module update failed: {error.Message}");
             enabled = false;
         }
     }

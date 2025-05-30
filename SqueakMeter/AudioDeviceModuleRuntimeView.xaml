@@ -42,7 +42,7 @@
             FontSize="16"
             Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVisibilityConverter}}" />
         <GroupBox Foreground="{StaticResource CForeground1}" Header="Disabled Audio Outputs" Margin="0,10,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalAlignment="Center" VerticalContentAlignment="Center">
-            <ListBox x:Name="DisabledDevicesList" ItemsSource="{Binding DisabledDeviceParams}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalAlignment="Center" VerticalContentAlignment="Center">
+            <ListBox x:Name="DisabledDevicesList" ItemsSource="{Binding DisabledDevices}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalAlignment="Center" VerticalContentAlignment="Center">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Grid HorizontalAlignment="Stretch" VerticalAlignment="Center">

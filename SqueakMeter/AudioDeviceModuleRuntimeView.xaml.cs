@@ -47,26 +47,14 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
         }
     }
 
-    public ObservableCollection<AudioDeviceInfo> DisabledDeviceParams { get; } = new();
-
-    public void RemoveDisabledDevice(object sender, RoutedEventArgs e)
-    {
-        FrameworkElement element = (FrameworkElement)sender;
-        AudioDeviceInfo device = (AudioDeviceInfo)element.Tag;
-
-        if (device != null)
-        {
-            int index = AudioDevices.IndexOf(device);
-            AudioDevices[index] = device with { IsEnabled = true };
-            DisabledDeviceParams.Remove(device);
-        }
-    }
+    public ObservableCollection<AudioDeviceInfo> DisabledDevices { get; } = new();
 
     public AudioDeviceModuleRuntimeView(SqueakMeterModule module)
     {
         InitializeComponent();
         DataContext = this;
         Module = module;
+        Module.disabledDeviceList.ForEach(device => DisabledDevices.Add(device));
 
         if (Module.notificationClient == null)
             Module.notificationClient = new AudioDeviceNotificationClient();
@@ -78,15 +66,31 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
 
     public void DeviceErrorOccurred(string deviceId, string errorMessage)
     {
-        AudioDeviceInfo? device = AudioDevices.FirstOrDefault(d => d.ID == deviceId);
-        if (device != null)
+        AudioDeviceInfo? device = AudioDevices.First(d => d.ID == deviceId);
+        if (device != null && !DisabledDevices.Any(device => device.ID == deviceId))
         {
             int index = AudioDevices.IndexOf(device);
             AudioDevices[index] = device with { IsEnabled = false };
-            DisabledDeviceParams.Add(AudioDevices[index]);
+            DisabledDevices.Add(AudioDevices[index]);
+            Module.disabledDeviceList.Add(AudioDevices[index]);
         }
+        Module.selectedDevice = null;
         SelectedDeviceId.Value = String.Empty;
         ErrorMessage = errorMessage;
+    }
+
+    public void RemoveDisabledDevice(object sender, RoutedEventArgs e)
+    {
+        FrameworkElement element = (FrameworkElement)sender;
+        AudioDeviceInfo device = (AudioDeviceInfo)element.Tag;
+
+        if (device != null)
+        {
+            int index = AudioDevices.IndexOf(device);
+            AudioDevices[index] = device with { IsEnabled = true };
+            DisabledDevices.Remove(device);
+            Module.disabledDeviceList.RemoveIf(el => el.ID == device.ID);
+        }
     }
 
     public void UpdateDeviceList()
@@ -106,14 +110,17 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
                 }
 
                 // Save the current selection
-                string previousSelectedId = SelectedDeviceId.Value;
+                string previousSelectedId = Module.selectedDevice?.ID ?? SelectedDeviceId.Value;
 
                 // Update UI with the new list of devices
                 suppressSelectionChanged = true;
                 SelectedDeviceId.Value = String.Empty;
                 AudioDevices.Clear();
                 foreach (MMDevice device in audioDevices)
-                    AudioDevices.Add(new AudioDeviceInfo(device.ID, device.FriendlyName));
+                {
+                    bool isEnabled = !DisabledDevices.Any(d => d.ID == device.ID);
+                    AudioDevices.Add(new AudioDeviceInfo(device.ID, device.FriendlyName, isEnabled));
+                }
 
                 // Reset audio device to the first device if selected audio device is no longer available
                 if (Module.activeDevice == null || !audioDevices.Any(d => d.ID == previousSelectedId))
@@ -129,8 +136,8 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
             catch (Exception error)
             {
                 suppressSelectionChanged = false;
-                ErrorMessage = $"Error updating audio devices: {error}";
-                Module.LogDebug($"Error updating audio devices: {error}");
+                ErrorMessage = $"Error updating audio devices: {error.Message}";
+                Module.LogDebug($"Error updating audio devices: {error.Message}");
             }
         });
     }
@@ -156,14 +163,16 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
             if (comboBox.SelectedItem is AudioDeviceInfo selectedItem)
             {
                 SelectedDeviceId.Value = selectedItem.ID;
-                Module.LogDebug($"Selected audio device: {selectedItem.FriendlyName} ({selectedItem.ID})");
+                Module.selectedDevice = selectedItem;
                 Module.SetCaptureDevice(selectedItem.ID);
+                Module.LogDebug($"Selected audio device: {selectedItem.FriendlyName} ({selectedItem.ID})");
             }
             else
             {
                 SelectedDeviceId.Value = string.Empty;
-                Module.LogDebug("No audio device selected.");
+                Module.selectedDevice = null;
                 ErrorMessage = "No audio device selected.";
+                Module.LogDebug("No audio device selected.");
             }
         });
     }
