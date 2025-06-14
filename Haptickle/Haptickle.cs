@@ -1,19 +1,52 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Valve.VR;
 using VRCOSC.App.SDK.Modules;
 using VRCOSC.App.SDK.Parameters.Queryable;
 
-namespace FuviiOSC.Haptickle
+namespace FuviiOSC.Haptickle;
+
+[ModuleTitle("Haptickle")]
+[ModuleDescription("Triggers Vive tracker haptics based on avatar parameters")]
+[ModuleType(ModuleType.Generic)]
+public class HaptickleModule : Module
 {
-	[ModuleTitle("Haptickle")]
-	[ModuleDescription("Triggers Vive tracker haptics based on avatar parameters")]
-	[ModuleType(ModuleType.Generic)]
-	public class HaptickleModule : Module
+	public CVRSystem? openVrSystem;
+
+	[ModulePersistent("hapticTriggers")]
+	public List<HapticTrigger> HapticTriggers { get; set; } = new();
+
+	protected override Task<bool> OnModuleStart()
 	{
-		[ModulePersistent("hapticTriggers")]
-		public List<HapticTrigger> HapticTriggers { get; set; } = new();
+		EVRInitError err = EVRInitError.None;
+		try
+		{
+			openVrSystem = OpenVR.Init(ref err, EVRApplicationType.VRApplication_Overlay);
+			if (err != EVRInitError.None || openVrSystem == null)
+			{
+				throw new Exception($"OpenVR initialization failed with error: {err}");
+			}
+		}
+		catch (Exception)
+		{
+			openVrSystem = null;
+			return Task.FromResult(false);
+		}
+		return Task.FromResult(true);
+	}
+
+	protected override Task OnModuleStop()
+	{
+		if (openVrSystem != null)
+		{
+			OpenVR.Shutdown();
+			openVrSystem = null;
+		}
+
+		return Task.CompletedTask;
 	}
 
 	public enum HaptickleSetting
