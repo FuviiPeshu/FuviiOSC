@@ -6,10 +6,10 @@
     xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
     xmlns:core="clr-namespace:VRCOSC.App.UI.Core;assembly=VRCOSC.App"
     mc:Ignorable="d"
-    xmlns:local="clr-namespace:FuviiOSC.SqueakMeter">
+    xmlns:common="clr-namespace:FuviiOSC.Common">
     <UserControl.Resources>
-        <local:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
-        <local:AlternationIndexToVisibilityConverter x:Key="AlternationIndexToVisibilityConverter" />
+        <common:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
+        <common:AlternationIndexToVisibilityConverter x:Key="AlternationIndexToVisibilityConverter" />
     </UserControl.Resources>
     <StackPanel>
         <ComboBox

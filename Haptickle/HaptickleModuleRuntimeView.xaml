@@ -7,10 +7,10 @@
     xmlns:core="clr-namespace:VRCOSC.App.UI.Core;assembly=VRCOSC.App"
     xmlns:queryableParameter="clr-namespace:VRCOSC.App.UI.Views.Modules.Settings.QueryableParameter;assembly=VRCOSC.App"
     mc:Ignorable="d"
-    xmlns:local="clr-namespace:FuviiOSC.Haptickle">
+    xmlns:common="clr-namespace:FuviiOSC.Common">
     <UserControl.Resources>
-        <local:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
-        <local:AlternationIndexToVisibilityConverter x:Key="AlternationIndexToVisibilityConverter" />
+        <common:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
+        <common:AlternationIndexToVisibilityConverter x:Key="AlternationIndexToVisibilityConverter" />
     </UserControl.Resources>
     <GroupBox Foreground="{StaticResource CForeground1}" Header="Device List" Margin="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalAlignment="Center" VerticalContentAlignment="Center">
         <ListView Background="{StaticResource CBackground2}" Padding="0" Margin="0" BorderThickness="0" ItemsSource="{Binding Trackers}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalAlignment="Center" VerticalContentAlignment="Center" AlternationCount="1000">

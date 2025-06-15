@@ -1,10 +1,9 @@
 using System;
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using Newtonsoft.Json;
 using Valve.VR;
 using VRCOSC.App.SDK.Parameters.Queryable;
@@ -34,12 +33,12 @@ public partial class HaptickleModuleRuntimeView
             {
                 if (Module.openVrSystem?.GetTrackedDeviceClass(i) == ETrackedDeviceClass.GenericTracker)
                 {
-                    ETrackedPropertyError err = ETrackedPropertyError.TrackedProp_Success;
-                    var sb = new System.Text.StringBuilder(64);
-                    Module.openVrSystem.GetStringTrackedDeviceProperty(i, ETrackedDeviceProperty.Prop_SerialNumber_String, sb, (uint)sb.Capacity, ref err);
+                    ETrackedPropertyError trackedError = ETrackedPropertyError.TrackedProp_Success;
+                    StringBuilder strBuilder = new StringBuilder(64);
+                    Module.openVrSystem.GetStringTrackedDeviceProperty(i, ETrackedDeviceProperty.Prop_SerialNumber_String, strBuilder, (uint)strBuilder.Capacity, ref trackedError);
 
-                    HapticTrigger? savedTrigger = Module.HapticTriggers.Find(trigger => trigger.DeviceSerialNumber == sb.ToString());
-                    Module.LogDebug($"Found tracker {i} with serial number {savedTrigger.DeviceSerialNumber} and saved trigger: {savedTrigger.HapticTriggerParams[0].Name} {savedTrigger.HapticTriggerParams[0].Name.Value}");
+                    string serialNumber = strBuilder.ToString();
+                    HapticTrigger? savedTrigger = Module.HapticTriggers.Find(trigger => trigger.DeviceSerialNumber == serialNumber);
                     if (savedTrigger != null)
                     {
                         Trackers.Add(savedTrigger);
@@ -48,7 +47,7 @@ public partial class HaptickleModuleRuntimeView
                     {
                         Trackers.Add(new HapticTrigger{
                             DeviceIndex = (int)i,
-                            DeviceSerialNumber = sb.ToString(),
+                            DeviceSerialNumber = serialNumber,
                         });
                     }
                 }
@@ -93,30 +92,4 @@ public class HapticTrigger
 
 public class HapticTriggerQueryableParameter : QueryableParameter
 {
-}
-
-public class AlternationIndexToVisibilityConverter : IValueConverter
-{
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-        if (value is int index && index > 0)
-            return Visibility.Visible;
-        else
-            return Visibility.Collapsed;
-    }
-
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
-}
-
-public class StringToVisibilityConverter : IValueConverter
-{
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-        return string.IsNullOrEmpty(value as string) ? Visibility.Collapsed : Visibility.Visible;
-    }
-
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-        throw new NotImplementedException();
-    }
 }
