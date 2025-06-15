@@ -149,7 +149,7 @@ public class HapticTrigger
     [JsonProperty("haptic_strength")]
     public float HapticStrength { get; set; } = 0.5f;
     [JsonProperty("haptic_trigger_params")]
-    public ObservableCollection<HapticTriggerQueryableParameter> HapticTriggerParams { get; set; } = [];
+    public ObservableCollection<HapticTriggerQueryableParameter> HapticTriggerParams { get; set; } = new();
 
     public bool Equals(HapticTrigger? other)
     {

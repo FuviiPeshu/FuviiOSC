@@ -58,12 +58,16 @@ public partial class HaptickleModuleRuntimeView
                     string serialNumber = strBuilder.ToString();
                     HapticTrigger? savedTrigger = Module.HapticTriggers.Find(trigger => trigger.DeviceSerialNumber == serialNumber);
                     if (savedTrigger != null)
+                    {
+                        savedTrigger.DeviceIndex = (int)i;
                         Trackers.Add(savedTrigger);
+                    }
                     else
                         Trackers.Add(new HapticTrigger
                         {
                             DeviceIndex = (int)i,
                             DeviceSerialNumber = serialNumber,
+                            HapticTriggerParams = [new HapticTriggerQueryableParameter()],
                         });
                 }
             });
