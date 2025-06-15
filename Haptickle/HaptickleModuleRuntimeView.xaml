@@ -9,23 +9,18 @@
     mc:Ignorable="d"
     xmlns:common="clr-namespace:FuviiOSC.Common">
     <UserControl.Resources>
-        <common:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
-        <common:AlternationIndexToVisibilityConverter x:Key="AlternationIndexToVisibilityConverter" />
+        <common:AllButFirstToVisibilityConverter x:Key="AllButFirstToVisibilityConverter" />
+        <common:NonEmptyStringToVisibilityConverter x:Key="NonEmptyStringToVisibilityConverter" />
     </UserControl.Resources>
-    <GroupBox Foreground="{StaticResource CForeground1}" Header="Device List" Margin="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalAlignment="Center" VerticalContentAlignment="Center">
-        <ListView Background="{StaticResource CBackground2}" Padding="0" Margin="0" BorderThickness="0" ItemsSource="{Binding Trackers}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalAlignment="Center" VerticalContentAlignment="Center" AlternationCount="1000">
+    <GroupBox Header="Device List" Visibility="{Binding Trackers.Count, Converter={StaticResource AllButFirstToVisibilityConverter}}" Foreground="{StaticResource CForeground1}" Margin="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalAlignment="Center" VerticalContentAlignment="Center">
+        <ListView ItemsSource="{Binding Trackers}" Background="{StaticResource CBackground2}" Padding="0" Margin="0" BorderThickness="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalAlignment="Center" VerticalContentAlignment="Center" AlternationCount="1000">
             <ListBox.Resources>
                 <Style TargetType="ListBoxItem">
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="ListBoxItem">
                                 <StackPanel>
-                                    <Border
-                                            x:Name="Separator"
-                                            Height="2"
-                                            Margin="0,2,0,2"
-                                            Background="{StaticResource CForeground1}"
-                                            Visibility="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=(ItemsControl.AlternationIndex), Converter={StaticResource AlternationIndexToVisibilityConverter}}"/>
+                                    <Border Visibility="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=(ItemsControl.AlternationIndex), Converter={StaticResource AllButFirstToVisibilityConverter}}" Height="2" Margin="0,2,0,2" Background="{StaticResource CForeground1}" />
                                     <ContentPresenter />
                                 </StackPanel>
                             </ControlTemplate>
@@ -47,7 +42,7 @@
                             </Grid>
                             <Slider Minimum="0" Maximum="1" TickFrequency="0.01" IsSnapToTickEnabled="True" Value="{Binding HapticStrength, Mode=TwoWay}" ValueChanged="StrengthSlider_ValueChanged" HorizontalAlignment="Stretch" />
                         </StackPanel>
-                        <Border x:Name="Separator" Width="1" Margin="8,0,8,0" Background="{StaticResource CForeground1}" />
+                        <Border Width="1" Margin="8,0,8,0" Background="{StaticResource CForeground1}" />
                         <queryableParameter:QueryableParameterView QueryableParameter="{Binding HapticTriggerParams}" />
                     </StackPanel>
                 </DataTemplate>
