@@ -2,13 +2,19 @@
 
 A small collection of useful VRCOSC modules!
 
+<br>
+
 ## 🛠 How to install
 
 This repository contains files designed to be used with the [VolcanicArts/VRCOSC](https://github.com/VolcanicArts/VRCOSC) app.
 Follow the instructions there and after launching the program the modules should appear in the first tab (Package Download) as **"Fuvii's Modules"**. 
-From there, simply download the latest version and enjoy!
+From there, simply download the latest version, enable modules which you'd like to use and enjoy!
 
-![VRCOSC package installation](https://github.com/user-attachments/assets/477559b6-706f-4e2e-bba9-e5776bb8695f)
+> 📝 Feel free to suggest new features or modules! And don't forget to report any issues you will encounter :)  
+
+![VRCOSC package installation](https://github.com/user-attachments/assets/fd67f861-84ff-4727-b3fb-94a4b5942cd8)
+
+<br>
 
 ## 📦 Available modules
 
@@ -67,3 +73,26 @@ This is made possible thanks to the [VRChat 2025.1.2 update](https://docs.vrchat
 
 ![Window for both module settings and parameters](https://github.com/user-attachments/assets/43d919ba-de6f-4aa5-a3c0-5a3d09e92561)
 ![Run tab with audio device selection](https://github.com/user-attachments/assets/0f749660-2c17-4639-a49f-ac987283750c)
+
+---
+
+### 📳 Haptickle 
+
+**Haptickle** triggers haptic feedback on Vive trackers based on avatar parameters received via OSC.
+
+#### ✨ Features
+
+- 🎚 **Per-tracker configuration:** Assign haptic triggers to individual Vive trackers by serial number
+- 🛠 **Customizable haptic strength:** Adjust the intensity for each tracker
+- 🔄 **Automatic device detection:** Trackers are automatically detected and updated as they are connected or disconnected
+
+#### ❓ How to use
+
+1. **Open the Run tab** inside VRCOSC
+2. **Connect your Vive trackers** and ensure they appear in the device list inside **Runtime** view
+3. **Add or edit haptic triggers:**
+   - Set the haptic strength and define the OSC parameter(s) that will activate the haptic pulse
+
+![Run tab with tracker haptic settings](https://github.com/user-attachments/assets/598affe0-b0d6-447f-b224-eaa079d7feea)
+
+
