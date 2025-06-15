@@ -13,7 +13,7 @@ using VRCOSC.App.SDK.Parameters.Queryable;
 namespace FuviiOSC.Haptickle;
 
 [ModuleTitle("Haptickle")]
-[ModuleDescription("Triggers Vive tracker haptics based on avatar parameters")]
+[ModuleDescription("Triggers Vive tracker haptics (if vibration motor is attached) based on avatar parameters")]
 [ModuleType(ModuleType.Generic)]
 public class HaptickleModule : Module
 {
