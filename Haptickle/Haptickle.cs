@@ -18,10 +18,10 @@ namespace FuviiOSC.Haptickle;
 public class HaptickleModule : Module
 {
     private readonly Dictionary<string, CancellationTokenSource> _pulseTokens = [];
-    private const ushort MIN_HAPTIC_PULSE_DURATION = 16;
-    private const ushort MAX_HAPTIC_PULSE_DURATION = 64;
-    private const ushort DEFAULT_PULSE_INTERVAL = 16;
-    private const ushort TRACKER_HAPTIC_AXIS_ID = 1;
+    private const ushort _MIN_HAPTIC_PULSE_DURATION = 16;
+    private const ushort _MAX_HAPTIC_PULSE_DURATION = 64;
+    private const ushort _DEFAULT_PULSE_INTERVAL = 16;
+    private const ushort _TRACKER_HAPTIC_AXIS_ID = 1;
 
     public CVRSystem? openVrSystem;
 
@@ -106,14 +106,14 @@ public class HaptickleModule : Module
                 float strength = trigger.HapticStrength;
                 if (strength <= 0.0f)
                 {
-                    await Task.Delay(DEFAULT_PULSE_INTERVAL, pulseToken.Token);
+                    await Task.Delay(_DEFAULT_PULSE_INTERVAL, pulseToken.Token);
                     continue;
                 }
 
-                ushort pulseDuration = (ushort)(MIN_HAPTIC_PULSE_DURATION + (strength * (MAX_HAPTIC_PULSE_DURATION - MIN_HAPTIC_PULSE_DURATION)));
-                openVrSystem?.TriggerHapticPulse((uint)trigger.DeviceIndex, TRACKER_HAPTIC_AXIS_ID, pulseDuration);
+                ushort pulseDuration = (ushort)(_MIN_HAPTIC_PULSE_DURATION + (strength * (_MAX_HAPTIC_PULSE_DURATION - _MIN_HAPTIC_PULSE_DURATION)));
+                openVrSystem?.TriggerHapticPulse((uint)trigger.DeviceIndex, _TRACKER_HAPTIC_AXIS_ID, pulseDuration);
 
-                await Task.Delay(pulseDuration + DEFAULT_PULSE_INTERVAL, pulseToken.Token);
+                await Task.Delay(pulseDuration + _DEFAULT_PULSE_INTERVAL, pulseToken.Token);
             }
         }, pulseToken.Token);
     }
