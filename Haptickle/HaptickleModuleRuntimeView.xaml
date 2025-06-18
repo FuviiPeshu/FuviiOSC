@@ -7,18 +7,23 @@
     xmlns:core="clr-namespace:VRCOSC.App.UI.Core;assembly=VRCOSC.App"
     xmlns:queryableParameter="clr-namespace:VRCOSC.App.UI.Views.Modules.Settings.QueryableParameter;assembly=VRCOSC.App"
     mc:Ignorable="d"
-    xmlns:common="clr-namespace:FuviiOSC.Common">
+    xmlns:common="clr-namespace:FuviiOSC.Common"
+    xmlns:haptickle="clr-namespace:FuviiOSC.Haptickle">
     <UserControl.Resources>
         <common:AllButFirstToVisibilityConverter x:Key="AllButFirstToVisibilityConverter" />
+        <common:InverseBooleanConverter x:Key="InverseBooleanConverter" />
         <common:NonEmptyStringToVisibilityConverter x:Key="NonEmptyStringToVisibilityConverter" />
     </UserControl.Resources>
     <GroupBox Header="Device List" Visibility="{Binding Trackers.Count, Converter={StaticResource AllButFirstToVisibilityConverter}}" Foreground="{StaticResource CForeground1}" Margin="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalAlignment="Center" VerticalContentAlignment="Center">
         <ListView ItemsSource="{Binding Trackers}" Background="{StaticResource CBackground2}" Padding="0" Margin="0" BorderThickness="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalAlignment="Center" VerticalContentAlignment="Center" AlternationCount="1000">
-            <ListBox.Resources>
-                <Style TargetType="ListBoxItem">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="BorderBrush" Value="Transparent" />
+                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
                     <Setter Property="Template">
                         <Setter.Value>
-                            <ControlTemplate TargetType="ListBoxItem">
+                            <ControlTemplate TargetType="ListViewItem">
                                 <StackPanel>
                                     <Border Visibility="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=(ItemsControl.AlternationIndex), Converter={StaticResource AllButFirstToVisibilityConverter}}" Height="2" Margin="0,2,0,2" Background="{StaticResource CForeground1}" />
                                     <ContentPresenter />
@@ -27,23 +32,66 @@
                         </Setter.Value>
                     </Setter>
                 </Style>
-            </ListBox.Resources>
+            </ListView.ItemContainerStyle>
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Margin="2" Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Center">
-                        <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Center" Width="128">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="{Binding DeviceSerialNumber}" Foreground="{StaticResource CForeground1}" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" />
-                                <TextBlock Text="{Binding HapticStrength}" Foreground="{StaticResource CForeground1}" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" />
-                            </Grid>
-                            <Slider Minimum="0" Maximum="1" TickFrequency="0.01" IsSnapToTickEnabled="True" Value="{Binding HapticStrength, Mode=TwoWay}" ValueChanged="StrengthSlider_ValueChanged" HorizontalAlignment="Stretch" />
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Center">
+                        <StackPanel Margin="2" Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Center">
+                            <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Center" Width="128">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding DeviceSerialNumber}" Foreground="{StaticResource CForeground1}" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding HapticStrength}" Foreground="{StaticResource CForeground1}" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                </Grid>
+                                <Slider Minimum="0" Maximum="1" TickFrequency="0.01" IsSnapToTickEnabled="True" Value="{Binding HapticStrength, Mode=TwoWay}" ValueChanged="StrengthSlider_ValueChanged" HorizontalAlignment="Stretch" />
+                            </StackPanel>
+                            <!-- ComboBox for Trigger Mode -->
+                            <ComboBox SelectedValue="{Binding TriggerMode, Mode=TwoWay}" SelectedValuePath="Tag" Width="90" Margin="0" VerticalContentAlignment="Center" Foreground="{StaticResource CBackground2}">
+                                <ComboBoxItem Content="OFF" Tag="{x:Static haptickle:HapticTriggerMode.Off}" Foreground="{StaticResource CBackground2}" />
+                                <ComboBoxItem Content="Constant" Tag="{x:Static haptickle:HapticTriggerMode.Constant}" Foreground="{StaticResource CBackground2}" />
+                                <ComboBoxItem Content="Proximity" Tag="{x:Static haptickle:HapticTriggerMode.Proximity}" Foreground="{StaticResource CBackground2}" />
+                                <ComboBoxItem Content="Velocity" Tag="{x:Static haptickle:HapticTriggerMode.Velocity}" Foreground="{StaticResource CBackground2}" />
+                                <ComboBoxItem Content="On change" Tag="{x:Static haptickle:HapticTriggerMode.OnChange}" Foreground="{StaticResource CBackground2}" />
+                            </ComboBox>
+                            <Border Width="1" Margin="8,0,8,0" Background="{StaticResource CForeground1}" />
+                            <queryableParameter:QueryableParameterView QueryableParameter="{Binding HapticTriggerParams}" />
                         </StackPanel>
-                        <Border Width="1" Margin="8,0,8,0" Background="{StaticResource CForeground1}" />
-                        <queryableParameter:QueryableParameterView QueryableParameter="{Binding HapticTriggerParams}" />
+                        <StackPanel Orientation="Horizontal" Margin="2,0,0,8">
+                            <TextBlock VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding TriggerMode}" Value="{x:Static haptickle:HapticTriggerMode.Off}">
+                                                <Setter Property="Text" Value="Disabled" />
+                                                <Setter Property="Foreground" Value="Orange" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding TriggerMode}" Value="{x:Static haptickle:HapticTriggerMode.Constant}">
+                                                <Setter Property="Text" Value="Vibrates with set strength when triggered" />
+                                                <Setter Property="Foreground" Value="{StaticResource CForeground1}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding TriggerMode}" Value="{x:Static haptickle:HapticTriggerMode.Proximity}">
+                                                <Setter Property="Text" Value="Vibrates with strength depending on the provided float (max strength set with slider, your contact must be set to proximity and used as float here)" />
+                                                <Setter Property="Foreground" Value="{StaticResource CForeground1}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding TriggerMode}" Value="{x:Static haptickle:HapticTriggerMode.Velocity}">
+                                                <Setter Property="Text" Value="Vibrates with strength scaled up with change of the provided float (max strength set with slider, your contact must be set to proximity and used as a float here)" />
+                                                <Setter Property="Foreground" Value="{StaticResource CForeground1}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding TriggerMode}" Value="{x:Static haptickle:HapticTriggerMode.OnChange}">
+                                                <Setter Property="Text" Value="Vibrates only for a short amount of time when triggered" />
+                                                <Setter Property="Foreground" Value="{StaticResource CForeground1}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <!-- Optional: Show warning icon for OFF -->
+                            <TextBlock Text="⚠" Visibility="{Binding TriggerMode, Converter={StaticResource NonEmptyStringToVisibilityConverter}, ConverterParameter=OFF}" Foreground="Orange" Margin="4,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
                     </StackPanel>
                 </DataTemplate>
             </ListView.ItemTemplate>

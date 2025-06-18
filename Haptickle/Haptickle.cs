@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using FuviiOSC.Common;
 using Newtonsoft.Json;
 using Valve.VR;
 using VRCOSC.App.SDK.Modules;
@@ -20,8 +21,11 @@ public class HaptickleModule : Module
     private readonly Dictionary<string, CancellationTokenSource> _pulseTokens = [];
     private const ushort _MIN_HAPTIC_PULSE_DURATION = 16;
     private const ushort _MAX_HAPTIC_PULSE_DURATION = 64;
-    private const ushort _DEFAULT_PULSE_INTERVAL = 16;
+    private const ushort _DEFAULT_PULSE_INTERVAL = 32;
     private const ushort _TRACKER_HAPTIC_AXIS_ID = 1;
+    private const ushort _DEFAULT_DELAY = 420;
+    // Workaround: Track validity state for each trigger/parameter (bug with not keeping isValid when value conditions are met and maintained)
+    private readonly Dictionary<string, bool> _parameterValidStates = [];
 
     public CVRSystem? openVrSystem;
 
@@ -77,15 +81,68 @@ public class HaptickleModule : Module
             foreach (HapticTriggerQueryableParameter queryableParameter in trigger.HapticTriggerParams.Where(param => param.Name.Value == receivedParameter.Name))
             {
                 QueryResult result = queryableParameter.Evaluate(receivedParameter);
-                if (result != null && result.JustBecameValid)
+                if (result == null)
                 {
-                    LogDebug($"Triggering haptic on device {trigger.DeviceSerialNumber} with strength set to {trigger.HapticStrength}");
-                    StartPulseLoop(trigger);
+                    continue;
                 }
-                // Stop pulsing if just became invalid
-                else if (result != null && result.JustBecameInvalid)
+
+                // --- WORKAROUND: Maintain our own "isValid" state due to VRCOSC bug ---
+                string key = $"{trigger.DeviceSerialNumber}:{queryableParameter.Name.Value}";
+                bool wasValid = _parameterValidStates.TryGetValue(key, out bool prevValid) && prevValid;
+                bool isValid = wasValid;
+                if (result.JustBecameValid)
+                    isValid = true;
+                else if (result.JustBecameInvalid || !result.IsValid)
+                    isValid = FuviiCommonUtils.IsParameterActuallyValid(receivedParameter, queryableParameter);
+                _parameterValidStates[key] = isValid;
+                // --- END WORKAROUND ---
+
+                switch (trigger.TriggerMode)
                 {
-                    StopPulseLoop(trigger);
+                    case HapticTriggerMode.Off:
+                        // Do nothing (haptics disabled)
+                        break;
+
+                    case HapticTriggerMode.Constant:
+                        if (result.JustBecameValid)
+                            StartPulseLoop(trigger);
+                        else if (!isValid && wasValid)
+                            StopPulseLoop(trigger);
+                        break;
+
+                    case HapticTriggerMode.Proximity:
+                        if (result != null && result.IsValid)
+                        {
+                            // TODO: Trigger haptics with strength based on result.FloatValue (proximity)
+                        }
+                        else
+                        {
+                            StopPulseLoop(trigger);
+                        }
+                        break;
+
+                    case HapticTriggerMode.Velocity:
+                        if (result != null && result.IsValid)
+                        {
+                            // TODO: Trigger haptics with strength based on change in result.FloatValue (velocity)
+                        }
+                        else
+                        {
+                            StopPulseLoop(trigger);
+                        }
+                        break;
+
+                    case HapticTriggerMode.OnChange:
+                        if (isValid != wasValid)
+                        {
+                            StartPulseLoop(trigger);
+                            Task.Run(async () =>
+                            {
+                                await Task.Delay(_DEFAULT_DELAY);
+                                StopPulseLoop(trigger);
+                            });
+                        }
+                        break;
                 }
             }
         }
@@ -106,7 +163,7 @@ public class HaptickleModule : Module
                 float strength = trigger.HapticStrength;
                 if (strength <= 0.0f)
                 {
-                    await Task.Delay(_DEFAULT_PULSE_INTERVAL, pulseToken.Token);
+                    await Task.Delay(_DEFAULT_DELAY, pulseToken.Token);
                     continue;
                 }
 
@@ -138,6 +195,15 @@ public class HaptickleModule : Module
     }
 }
 
+public enum HapticTriggerMode
+{
+    Off,
+    Constant,
+    Proximity,
+    Velocity,
+    OnChange
+}
+
 public class HapticTrigger
 {
     [JsonProperty("id")]
@@ -150,14 +216,8 @@ public class HapticTrigger
     public float HapticStrength { get; set; } = 0.5f;
     [JsonProperty("haptic_trigger_params")]
     public ObservableCollection<HapticTriggerQueryableParameter> HapticTriggerParams { get; set; } = new();
-
-    public bool Equals(HapticTrigger? other)
-    {
-        if (ReferenceEquals(null, other)) return false;
-        if (ReferenceEquals(this, other)) return true;
-
-        return DeviceIndex.Equals(other.DeviceIndex) && HapticStrength.Equals(other.HapticStrength) && HapticTriggerParams.SequenceEqual(other.HapticTriggerParams);
-    }
+    [JsonProperty("trigger_mode")]
+    public HapticTriggerMode TriggerMode { get; set; } = HapticTriggerMode.Constant;
 }
 
 public class HapticTriggerQueryableParameter : QueryableParameter
