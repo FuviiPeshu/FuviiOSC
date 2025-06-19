@@ -1,11 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using FuviiOSC.Common;
-using Newtonsoft.Json;
 using Valve.VR;
 using VRCOSC.App.SDK.Modules;
 using VRCOSC.App.SDK.Parameters;
@@ -85,114 +82,38 @@ public class HaptickleModule : Module
             foreach (HapticTriggerQueryableParameter queryableParameter in trigger.HapticTriggerParams.Where(param => param.Name.Value == receivedParameter.Name))
             {
                 QueryResult result = queryableParameter.Evaluate(receivedParameter);
-                if (result == null)
-                {
-                    continue;
-                }
+                if (result == null) continue;
 
                 // --- WORKAROUND: Maintain our own "isValid" state due to VRCOSC bug ---
                 string key = $"{trigger.DeviceSerialNumber}:{queryableParameter.Name.Value}";
                 bool wasValid = _parameterValidStates.TryGetValue(key, out bool prevValid) && prevValid;
-                bool isValid = wasValid;
-                if (result.JustBecameValid)
-                    isValid = true;
-                else if (result.JustBecameInvalid || !result.IsValid)
-                {
-                    if (trigger.TriggerMode == HapticTriggerMode.Proximity || trigger.TriggerMode == HapticTriggerMode.Velocity)
-                        isValid = true; // parameter received with proper name so we don't need to check additional conditions since it's proximity/velocity based
-                    else
-                        isValid = FuviiCommonUtils.IsParameterActuallyValid(receivedParameter, queryableParameter);
-                }
+                bool isValid = HaptickleTriggerUtils.EvaluateIsValid(trigger, result, receivedParameter, queryableParameter, wasValid);
                 _parameterValidStates[key] = isValid;
                 // --- END WORKAROUND ---
 
                 switch (trigger.TriggerMode)
                 {
                     case HapticTriggerMode.Off:
-                        // Do nothing (haptics disabled)
+                        StopPulseLoop(trigger);
                         break;
                     case HapticTriggerMode.Constant:
-                        _strengthScalars[key] = 1.0f;
-
-                        if (result.JustBecameValid)
-                            StartPulseLoop(trigger);
-                        else if (!isValid && wasValid)
-                            StopPulseLoop(trigger);
+                        HandleConstant(trigger, key, isValid, wasValid, result);
                         break;
                     case HapticTriggerMode.Proximity:
-                        float proximityValue = receivedParameter.GetValue<float>();
-                        _strengthScalars[key] = proximityValue;
-
-                        if (isValid && receivedParameter.Type == ParameterType.Float && !_pulseTokens.Any(token => token.Key == trigger.DeviceSerialNumber))
-                            StartPulseLoop(trigger, null, 1.0f, key);
-                        else if (!isValid && wasValid)
-                            StopPulseLoop(trigger);
+                        HandleProximity(trigger, key, isValid, wasValid, receivedParameter);
                         break;
                     case HapticTriggerMode.Velocity:
-                        float value = receivedParameter.GetValue<float>();
-                        float lastValue = _lastFloatValues.TryGetValue(key, out float v) ? v : 0.0f;
-                        DateTime now = DateTime.UtcNow;
-                        DateTime lastTimestamp = _lastValueTimestamps.TryGetValue(key, out DateTime t) ? t : now;
-                        float timePassed = (float)Math.Max((now - lastTimestamp).TotalSeconds, 0.01f); // avoid division by zero
-                        float velocity = Math.Abs(value - lastValue) / timePassed;
-                        bool hasMovedSignificantly = velocity > _MIN_MARGIN;
-                        _lastFloatValues[key] = value;
-                        _lastValueTimestamps[key] = now;
-                        _strengthScalars[key] = velocity;
-
-                        if (isValid && receivedParameter.Type == ParameterType.Float)
-                        {
-                            if (!hasMovedSignificantly)
-                                StopPulseLoop(trigger);
-                            else if (!_pulseTokens.Any(token => token.Key == trigger.DeviceSerialNumber))
-                                StartPulseLoop(trigger, null, 1.0f, key);
-                        }
-                        else if (!isValid && wasValid)
-                        {
-                            _lastFloatValues[key] = 0.0f;
-                            _strengthScalars[key] = 0.0f;
-                            StopPulseLoop(trigger);
-                        }
+                        HandleVelocity(trigger, key, isValid, wasValid, receivedParameter);
                         break;
                     case HapticTriggerMode.OnChange:
-                        _strengthScalars[key] = 1.0f;
-
-                        if (isValid != wasValid)
-                        {
-                            StartPulseLoop(trigger);
-                            Task.Run(async () =>
-                            {
-                                await Task.Delay(_DEFAULT_DELAY);
-                                StopPulseLoop(trigger);
-                            });
-                        }
+                        HandleOnChange(trigger, key, isValid, wasValid);
                         break;
                 }
             }
         }
     }
 
-    private void SendSingleHapticPulse(HapticTrigger trigger, float strengthScalar = 1.0f)
-    {
-        string key = trigger.DeviceSerialNumber;
-        if (!_pulseTokens.Any(token => token.Key == key))
-        {
-            float strength = Math.Clamp(trigger.HapticStrength * strengthScalar, 0.0f, 1.0f);
-            if (openVrSystem == null || strength <= 0.0f) return;
-
-            ushort pulseDuration = (ushort)(_MIN_HAPTIC_PULSE_DURATION + (strength * (_MAX_HAPTIC_PULSE_DURATION - _MIN_HAPTIC_PULSE_DURATION)));
-            CancellationTokenSource pulseToken = new CancellationTokenSource();
-            _pulseTokens[key] = pulseToken;
-            openVrSystem.TriggerHapticPulse((uint)trigger.DeviceIndex, _TRACKER_HAPTIC_AXIS_ID, pulseDuration);
-            Task.Run(async () =>
-            {
-                await Task.Delay(pulseDuration, pulseToken.Token);
-                StopPulseLoop(trigger);
-            }, pulseToken.Token);
-        }
-    }
-
-    private void StartPulseLoop(HapticTrigger trigger, int? times = null, float strengthScalar = 1.0f, string? scalarKey = null)
+    private void StartPulseLoop(HapticTrigger trigger, string? scalarKey = null)
     {
         string key = trigger.DeviceSerialNumber;
         StopPulseLoop(trigger); // ensure no duplicate tasks
@@ -203,9 +124,9 @@ public class HaptickleModule : Module
         Task.Run(async () =>
         {
             int index = 0;
-            while (!pulseToken.Token.IsCancellationRequested && (!times.HasValue || index < times))
+            while (!pulseToken.Token.IsCancellationRequested)
             {
-                float scalar = scalarKey != null ? _strengthScalars[scalarKey] : strengthScalar;
+                float scalar = scalarKey != null ? _strengthScalars[scalarKey] : 1.0f;
                 float strength = Math.Clamp(trigger.HapticStrength * scalar, 0.0f, 1.0f);
                 if (openVrSystem == null || strength <= 0.0f)
                 {
@@ -233,6 +154,69 @@ public class HaptickleModule : Module
         }
     }
 
+    private void HandleConstant(HapticTrigger trigger, string key, bool isValid, bool wasValid, QueryResult result)
+    {
+        _strengthScalars[key] = 1.0f;
+        if (result.JustBecameValid)
+            StartPulseLoop(trigger);
+        else if (!isValid && wasValid)
+            StopPulseLoop(trigger);
+    }
+
+    private void HandleProximity(HapticTrigger trigger, string key, bool isValid, bool wasValid, ReceivedParameter receivedParameter)
+    {
+        float proximityValue = receivedParameter.GetValue<float>();
+        _strengthScalars[key] = proximityValue;
+
+        if (isValid && receivedParameter.Type == ParameterType.Float && !_pulseTokens.ContainsKey(trigger.DeviceSerialNumber))
+            StartPulseLoop(trigger, key);
+        else if (!isValid && wasValid)
+            StopPulseLoop(trigger);
+    }
+
+    private void HandleVelocity(HapticTrigger trigger, string key, bool isValid, bool wasValid, ReceivedParameter receivedParameter)
+    {
+        float value = receivedParameter.GetValue<float>();
+        float lastValue = _lastFloatValues.TryGetValue(key, out float v) ? v : value;
+        DateTime now = DateTime.UtcNow;
+        DateTime lastTimestamp = _lastValueTimestamps.TryGetValue(key, out DateTime t) ? t : now;
+        float timePassed = (float)Math.Max((now - lastTimestamp).TotalSeconds, 0.01f);
+        float velocity = Math.Abs(value - lastValue) / timePassed;
+        bool hasMovedSignificantly = velocity > _MIN_MARGIN;
+
+        _lastFloatValues[key] = value;
+        _lastValueTimestamps[key] = now;
+        _strengthScalars[key] = velocity;
+
+        if (isValid && receivedParameter.Type == ParameterType.Float)
+        {
+            if (hasMovedSignificantly && !_pulseTokens.ContainsKey(trigger.DeviceSerialNumber))
+                StartPulseLoop(trigger, key);
+            else if (!hasMovedSignificantly)
+                StopPulseLoop(trigger);
+        }
+        else if (!isValid && wasValid)
+        {
+            _lastFloatValues[key] = 0.0f;
+            _strengthScalars[key] = 0.0f;
+            StopPulseLoop(trigger);
+        }
+    }
+
+    private void HandleOnChange(HapticTrigger trigger, string key, bool isValid, bool wasValid)
+    {
+        _strengthScalars[key] = 1.0f;
+        if (isValid != wasValid)
+        {
+            StartPulseLoop(trigger);
+            Task.Run(async () =>
+            {
+                await Task.Delay(_DEFAULT_DELAY);
+                StopPulseLoop(trigger);
+            });
+        }
+    }
+
     public enum HaptickleSetting
     {
         HapticTriggers
@@ -241,33 +225,4 @@ public class HaptickleModule : Module
     public enum HaptickleParameter
     {
     }
-}
-
-public enum HapticTriggerMode
-{
-    Off,
-    Constant,
-    Proximity,
-    Velocity,
-    OnChange
-}
-
-public class HapticTrigger
-{
-    [JsonProperty("id")]
-    public string ID { get; set; } = Guid.NewGuid().ToString();
-    [JsonProperty("device_index")]
-    public int DeviceIndex { get; set; } = 0;
-    [JsonProperty("device_serial_number")]
-    public string DeviceSerialNumber { get; set; } = "";
-    [JsonProperty("haptic_strength")]
-    public float HapticStrength { get; set; } = 0.5f;
-    [JsonProperty("haptic_trigger_params")]
-    public ObservableCollection<HapticTriggerQueryableParameter> HapticTriggerParams { get; set; } = new();
-    [JsonProperty("trigger_mode")]
-    public HapticTriggerMode TriggerMode { get; set; } = HapticTriggerMode.Off;
-}
-
-public class HapticTriggerQueryableParameter : QueryableParameter
-{
 }
