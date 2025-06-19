@@ -20,6 +20,7 @@ public class HaptickleModule : Module
 {
     private readonly Dictionary<string, CancellationTokenSource> _pulseTokens = new();
     private readonly Dictionary<string, float> _lastFloatValues = new();
+    private readonly Dictionary<string, DateTime> _lastValueTimestamps = new();
     private const ushort _MIN_HAPTIC_PULSE_DURATION = 20;
     private const ushort _MAX_HAPTIC_PULSE_DURATION = 80;
     private const ushort _DEFAULT_PULSE_INTERVAL = 32;
@@ -96,7 +97,12 @@ public class HaptickleModule : Module
                 if (result.JustBecameValid)
                     isValid = true;
                 else if (result.JustBecameInvalid || !result.IsValid)
-                    isValid = FuviiCommonUtils.IsParameterActuallyValid(receivedParameter, queryableParameter);
+                {
+                    if (trigger.TriggerMode == HapticTriggerMode.Proximity || trigger.TriggerMode == HapticTriggerMode.Velocity)
+                        isValid = true; // parameter received with proper name so we don't need to check additional conditions since it's proximity/velocity based
+                    else
+                        isValid = FuviiCommonUtils.IsParameterActuallyValid(receivedParameter, queryableParameter);
+                }
                 _parameterValidStates[key] = isValid;
                 // --- END WORKAROUND ---
 
@@ -125,10 +131,14 @@ public class HaptickleModule : Module
                     case HapticTriggerMode.Velocity:
                         float value = receivedParameter.GetValue<float>();
                         float lastValue = _lastFloatValues.TryGetValue(key, out float v) ? v : 0.0f;
-                        float velocity = Math.Abs(value - lastValue);
+                        DateTime now = DateTime.UtcNow;
+                        DateTime lastTimestamp = _lastValueTimestamps.TryGetValue(key, out DateTime t) ? t : now;
+                        float timePassed = (float)Math.Max((now - lastTimestamp).TotalSeconds, 0.01f); // avoid division by zero
+                        float velocity = Math.Abs(value - lastValue) / timePassed;
                         bool hasMovedSignificantly = velocity > _MIN_MARGIN;
                         _lastFloatValues[key] = value;
-                        _strengthScalars[key] = velocity * 4;
+                        _lastValueTimestamps[key] = now;
+                        _strengthScalars[key] = velocity;
 
                         if (isValid && receivedParameter.Type == ParameterType.Float)
                         {
