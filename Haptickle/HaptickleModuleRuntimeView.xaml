@@ -37,7 +37,7 @@
                 <DataTemplate>
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Center">
                         <StackPanel Margin="2" Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Center">
-                            <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Center" Width="128">
+                            <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Center" Width="128" Margin="0,0,4,0">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
@@ -57,9 +57,61 @@
                                 <ComboBoxItem Content="On change" Tag="{x:Static haptickle:HapticTriggerMode.OnChange}" Foreground="{StaticResource CBackground2}" />
                             </ComboBox>
                             <Border Width="1" Margin="8,0,8,0" Background="{StaticResource CForeground1}" />
-                            <queryableParameter:QueryableParameterView QueryableParameter="{Binding HapticTriggerParams}" />
+                            <ContentControl Content="{Binding HapticTriggerParams}">
+                                <ContentControl.Style>
+                                    <Style TargetType="ContentControl">
+                                        <Setter Property="IsEnabled" Value="True" />
+                                        <Setter Property="ContentTemplate">
+                                            <Setter.Value>
+                                                <DataTemplate>
+                                                    <core:SpacedStackPanel Orientation="Horizontal" Spacing="10" Height="30">
+                                                        <TextBlock Text="When" Foreground="{DynamicResource CForeground1}" FontSize="17" VerticalAlignment="Center" />
+                                                        <TextBox FontSize="17" VerticalAlignment="Center" VerticalContentAlignment="Center" Text="{Binding Name.Value}" Width="300" />
+                                                    </core:SpacedStackPanel>
+                                                </DataTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding TriggerMode}" Value="{x:Static haptickle:HapticTriggerMode.Off}">
+                                                <Setter Property="IsEnabled" Value="False" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding TriggerMode}" Value="{x:Static haptickle:HapticTriggerMode.Constant}">
+                                                <Setter Property="ContentTemplate">
+                                                    <Setter.Value>
+                                                        <DataTemplate>
+                                                            <queryableParameter:QueryableParameterView QueryableParameter="{Binding}" />
+                                                        </DataTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding TriggerMode}" Value="{x:Static haptickle:HapticTriggerMode.OnChange}">
+                                                <Setter Property="ContentTemplate">
+                                                    <Setter.Value>
+                                                        <DataTemplate>
+                                                            <queryableParameter:QueryableParameterView QueryableParameter="{Binding}" />
+                                                        </DataTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ContentControl.Style>
+                            </ContentControl>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="2,0,0,8">
+                            <!-- Optional: Show warning icon for OFF -->
+                            <TextBlock Text="⚠" Margin="0,0,2,0" Foreground="Orange">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding TriggerMode}" Value="{x:Static haptickle:HapticTriggerMode.Off}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                             <TextBlock VerticalAlignment="Center">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
@@ -74,11 +126,11 @@
                                                 <Setter Property="Foreground" Value="{StaticResource CForeground1}" />
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding TriggerMode}" Value="{x:Static haptickle:HapticTriggerMode.Proximity}">
-                                                <Setter Property="Text" Value="Vibrates with strength depending on the provided float (max strength set with slider, your contact must be set to proximity and used as float here)" />
+                                                <Setter Property="Text" Value="Vibrates with strength depending on the provided float (your contact must be set to proximity)" />
                                                 <Setter Property="Foreground" Value="{StaticResource CForeground1}" />
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding TriggerMode}" Value="{x:Static haptickle:HapticTriggerMode.Velocity}">
-                                                <Setter Property="Text" Value="Vibrates with strength scaled up with change of the provided float (max strength set with slider, your contact must be set to proximity and used as a float here)" />
+                                                <Setter Property="Text" Value="Vibrates with strength scaled up with change of the provided float (your contact must be set to proximity)" />
                                                 <Setter Property="Foreground" Value="{StaticResource CForeground1}" />
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding TriggerMode}" Value="{x:Static haptickle:HapticTriggerMode.OnChange}">
@@ -89,8 +141,6 @@
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
-                            <!-- Optional: Show warning icon for OFF -->
-                            <TextBlock Text="⚠" Visibility="{Binding TriggerMode, Converter={StaticResource NonEmptyStringToVisibilityConverter}, ConverterParameter=OFF}" Foreground="Orange" Margin="4,0,0,0" VerticalAlignment="Center" />
                         </StackPanel>
                     </StackPanel>
                 </DataTemplate>
