@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
-using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using Valve.VR;
@@ -92,15 +91,11 @@ public partial class HaptickleModuleRuntimeView
         return indexes;
     }
 
-    private void StrengthSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is Slider slider && slider.DataContext is HapticTrigger tracker)
+        if (sender is ComboBox comboBox && comboBox.DataContext is HapticTrigger trigger)
         {
-            int savedTriggerIndex = Module.HapticTriggers.FindIndex(trigger => trigger.DeviceSerialNumber == tracker.DeviceSerialNumber);
-            if (savedTriggerIndex >= 0)
-                Module.HapticTriggers[savedTriggerIndex].HapticStrength = (float)slider.Value;
-            else
-                Module.HapticTriggers.Add(tracker);
+            Module.StopPulseLoop(trigger);
         }
     }
 }
