@@ -50,7 +50,51 @@
                                         <RowDefinition Height="4" />
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
-                                    <TextBlock Text="{Binding DeviceSerialNumber}" Foreground="{StaticResource CForeground1}" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                                    <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="0" Margin="0" HorizontalAlignment="Stretch">
+                                        <TextBlock Text="{Binding DeviceSerialNumber}" Foreground="{StaticResource CForeground1}" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                                        <!-- Identify Icon Button -->
+                                        <Button x:Name="BlinkButton" Click="Button_Identify" Width="20" Height="20" Margin="0" VerticalAlignment="Center" Cursor="Hand">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Background" Value="Transparent" />
+                                                    <Setter Property="BorderBrush" Value="Transparent" />
+                                                    <Setter Property="BorderThickness" Value="0" />
+                                                    <Setter Property="OverridesDefaultStyle" Value="True" />
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Viewbox Stretch="Uniform">
+                                                                    <Canvas Width="16" Height="16">
+                                                                        <TextBlock x:Name="IdentifyIcon" Text="🔍" FontWeight="Bold" FontSize="12" Canvas.Left="4" Canvas.Top="0" Foreground="{StaticResource CForeground2}" />
+                                                                    </Canvas>
+                                                                </Viewbox>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter TargetName="IdentifyIcon" Property="Foreground" Value="{StaticResource CForeground1}" />
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                    <Style.Triggers>
+                                                        <EventTrigger RoutedEvent="Button.Click">
+                                                            <BeginStoryboard>
+                                                                <Storyboard>
+                                                                    <!-- Change to blue instantly -->
+                                                                    <ColorAnimation Storyboard.TargetProperty="(Button.Background).(SolidColorBrush.Color)" To="Blue" Duration="0:0:0" />
+                                                                    <!-- Keep blue for 0.5s, then back to LightGray -->
+                                                                    <ColorAnimation Storyboard.TargetProperty="(Button.Background).(SolidColorBrush.Color)" To="LightGray" BeginTime="0:0:0.5" Duration="0:0:0" />
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </EventTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <Button.ToolTip>
+                                                <TextBlock Text="Identify device (pulse/flash)" />
+                                            </Button.ToolTip>
+                                        </Button>
+                                    </StackPanel>
                                     <!-- ComboBox for Trigger Mode -->
                                     <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="2" Margin="0" HorizontalAlignment="Stretch">
                                         <ComboBox SelectedValue="{Binding TriggerMode, Mode=TwoWay}" SelectedValuePath="Tag" SelectionChanged="ComboBox_SelectionChanged" Width="90" Margin="0" HorizontalAlignment="Stretch" VerticalContentAlignment="Center">

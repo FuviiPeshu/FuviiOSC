@@ -119,6 +119,11 @@ public class HaptickleModule : Module
         }
     }
 
+    public void IdentifyDevice(HapticTrigger trigger)
+    {
+        openVrSystem?.TriggerHapticPulse((uint)trigger.DeviceIndex, 0, 500); // 500ms triggers blinking on the tracker LED
+    }
+
     private void StartPulseLoop(HapticTrigger trigger, string? scalarKey = null)
     {
         string key = trigger.DeviceSerialNumber;

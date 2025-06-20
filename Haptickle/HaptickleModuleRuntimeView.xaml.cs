@@ -3,10 +3,16 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
+using Microsoft.Extensions.Logging;
 using Valve.VR;
 using VRCOSC.App.Utils;
+using WindowsInput.Events;
 
 namespace FuviiOSC.Haptickle;
 
@@ -91,11 +97,51 @@ public partial class HaptickleModuleRuntimeView
         return indexes;
     }
 
+    private async void Button_Identify(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is HapticTrigger trigger)
+        {
+            Module.IdentifyDevice(trigger);
+            await BlinkAndDisableAsync(button, Colors.LimeGreen);
+        }
+    }
+
     private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (sender is ComboBox comboBox && comboBox.DataContext is HapticTrigger trigger)
         {
             Module.StopPulseLoop(trigger);
+        }
+    }
+
+    public async Task BlinkAndDisableAsync(Button button, Color blinkColor, int durationMs = 400, int blinkCount = 4)
+    {
+        try
+        {
+            if (button == null) return;
+
+            TextBlock identifyIcon = (TextBlock)button.Template.FindName("IdentifyIcon", button);
+            if (identifyIcon == null) return;
+
+            Brush origBrush = identifyIcon.Foreground;
+
+            button.IsEnabled = false;
+            for (int i = 0; i < blinkCount; i++)
+            {
+                Brush tempBrush = new SolidColorBrush(blinkColor);
+                identifyIcon.Foreground = tempBrush;
+                await Task.Delay(durationMs / blinkCount);
+                identifyIcon.Foreground = origBrush;
+                // Pause between blinks, except after the last one
+                if (i < blinkCount - 1)
+                    await Task.Delay(durationMs / blinkCount);
+            }
+            await Task.Delay(durationMs);
+            button.IsEnabled = true;
+        }
+        catch (Exception error)
+        {
+            Module.LogDebug($"Error in BlinkAndDisableAsync: {error}");
         }
     }
 }
