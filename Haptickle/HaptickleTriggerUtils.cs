@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Threading.Tasks;
 using FuviiOSC.Common;
 using Newtonsoft.Json;
 using VRCOSC.App.SDK.Parameters;
@@ -26,16 +24,66 @@ public class HapticTrigger
     public int DeviceIndex { get; set; } = 0;
     [JsonProperty("device_serial_number")]
     public string DeviceSerialNumber { get; set; } = "";
-    [JsonProperty("haptic_strength")]
-    public float HapticStrength { get; set; } = 0.5f;
     [JsonProperty("haptic_trigger_params")]
     public ObservableCollection<HapticTriggerQueryableParameter> HapticTriggerParams { get; set; } = new();
     [JsonProperty("trigger_mode")]
     public HapticTriggerMode TriggerMode { get; set; } = HapticTriggerMode.Off;
+    [JsonProperty("pattern_config")]
+    public VibrationPatternConfig PatternConfig { get; set; } = new VibrationPatternConfig();
 }
 
 public class HapticTriggerQueryableParameter : QueryableParameter
 {
+}
+
+public enum VibrationPatternType
+{
+    Linear,
+    Sine,
+    Throb
+}
+
+public static class VibrationPatternTypeHelper
+{
+    public static Array AllValues => Enum.GetValues(typeof(VibrationPatternType));
+}
+
+public class VibrationPatternConfig
+{
+    public VibrationPatternType Pattern { get; set; } = VibrationPatternType.Linear;
+    public float MinStrength { get; set; } = 0.0f;
+    public float MaxStrength { get; set; } = 1.0f;
+    public float Speed { get; set; } = 1.0f;
+}
+
+public static class VibrationPattern
+{
+    public static float Apply(VibrationPatternConfig config, float value, float delta, float phase)
+    {
+        float result = 0.0f;
+        switch (config.Pattern)
+        {
+            case VibrationPatternType.Linear:
+                result = value;
+                break;
+            case VibrationPatternType.Sine:
+                result = (float)(Math.Sin(phase * config.Speed * 2.0f * Math.PI) * 0.5f + 0.5f) * value;
+                break;
+            case VibrationPatternType.Throb:
+                double period = 0.42 / Math.Max(0.01, config.Speed); // prevent divide by zero
+                double dutyCycle = 0.64;
+                double t = (phase % period) / period;
+                result = (t < dutyCycle) ? value : 0.0f;
+                break;
+        }
+        return Map(result, config.MinStrength, config.MaxStrength);
+    }
+
+    private static float Map(float value, float min, float max)
+    {
+        if (value <= 0) return 0.0f;
+        return min + (value * (max - min));
+    }
 }
 
 public static class HaptickleTriggerUtils

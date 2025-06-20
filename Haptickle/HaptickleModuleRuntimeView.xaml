@@ -10,6 +10,7 @@
     xmlns:common="clr-namespace:FuviiOSC.Common"
     xmlns:haptickle="clr-namespace:FuviiOSC.Haptickle">
     <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <common:AllButFirstToVisibilityConverter x:Key="AllButFirstToVisibilityConverter" />
         <common:InverseBooleanConverter x:Key="InverseBooleanConverter" />
         <common:NonEmptyStringToVisibilityConverter x:Key="NonEmptyStringToVisibilityConverter" />
@@ -25,7 +26,7 @@
                         <Setter.Value>
                             <ControlTemplate TargetType="ListViewItem">
                                 <StackPanel>
-                                    <Border Visibility="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=(ItemsControl.AlternationIndex), Converter={StaticResource AllButFirstToVisibilityConverter}}" Height="2" Margin="0,2,0,2" Background="{StaticResource CForeground1}" />
+                                    <Border Visibility="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=(ItemsControl.AlternationIndex), Converter={StaticResource AllButFirstToVisibilityConverter}}" Height="2" Margin="0,2,0,2" Background="{StaticResource CForeground2}" />
                                     <ContentPresenter />
                                 </StackPanel>
                             </ControlTemplate>
@@ -36,26 +37,99 @@
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Center">
-                        <StackPanel Margin="2" Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Center">
-                            <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Center" Width="128" Margin="0,0,4,0">
+                        <StackPanel Margin="4" Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Center">
+                            <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Center" Width="Auto" Margin="0">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="8" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{Binding DeviceSerialNumber}" Foreground="{StaticResource CForeground1}" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" />
-                                    <TextBlock Text="{Binding HapticStrength}" Foreground="{StaticResource CForeground1}" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="4" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="{Binding DeviceSerialNumber}" Foreground="{StaticResource CForeground1}" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                                    <!-- ComboBox for Trigger Mode -->
+                                    <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="2" Margin="0" HorizontalAlignment="Stretch">
+                                        <ComboBox SelectedValue="{Binding TriggerMode, Mode=TwoWay}" SelectedValuePath="Tag" SelectionChanged="ComboBox_SelectionChanged" Width="90" Margin="0" HorizontalAlignment="Stretch" VerticalContentAlignment="Center">
+                                            <ComboBoxItem Content="OFF" Tag="{x:Static haptickle:HapticTriggerMode.Off}" Foreground="{StaticResource CBackground2}" />
+                                            <ComboBoxItem Content="Constant" Tag="{x:Static haptickle:HapticTriggerMode.Constant}" Foreground="{StaticResource CBackground2}" />
+                                            <ComboBoxItem Content="Proximity" Tag="{x:Static haptickle:HapticTriggerMode.Proximity}" Foreground="{StaticResource CBackground2}" />
+                                            <ComboBoxItem Content="Velocity" Tag="{x:Static haptickle:HapticTriggerMode.Velocity}" Foreground="{StaticResource CBackground2}" />
+                                            <ComboBoxItem Content="On change" Tag="{x:Static haptickle:HapticTriggerMode.OnChange}" Foreground="{StaticResource CBackground2}" />
+                                        </ComboBox>
+                                        <ToggleButton x:Name="InfoToggle" Width="20" Height="20" Margin="0" VerticalAlignment="Center" Focusable="False" Cursor="Hand">
+                                            <ToggleButton.Style>
+                                                <Style TargetType="ToggleButton">
+                                                    <Setter Property="Background" Value="Transparent"/>
+                                                    <Setter Property="BorderBrush" Value="Transparent"/>
+                                                    <Setter Property="BorderThickness" Value="0"/>
+                                                    <Setter Property="OverridesDefaultStyle" Value="True"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="ToggleButton">
+                                                                <Grid>
+                                                                    <Viewbox Stretch="Uniform">
+                                                                        <Canvas Width="16" Height="16">
+                                                                            <TextBlock x:Name="InfoIcon" Text="?" FontWeight="Bold" FontSize="12" Foreground="{StaticResource CForeground2}" Canvas.Left="4" Canvas.Top="0" />
+                                                                        </Canvas>
+                                                                    </Viewbox>
+                                                                </Grid>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter TargetName="InfoIcon" Property="Foreground" Value="{StaticResource CForeground1}" />
+                                                                    </Trigger>
+                                                                    <Trigger Property="IsChecked" Value="True">
+                                                                        <Setter TargetName="InfoIcon" Property="Foreground" Value="{StaticResource CGreen}" />
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </ToggleButton.Style>
+                                            <ToggleButton.ToolTip>
+                                                <TextBlock Text="Show info" />
+                                            </ToggleButton.ToolTip>
+                                        </ToggleButton>
+                                    </StackPanel>
+                                    <!-- Pattern Config -->
+                                    <ComboBox ItemsSource="{x:Static haptickle:VibrationPatternTypeHelper.AllValues}" SelectedItem="{Binding PatternConfig.Pattern, Mode=TwoWay}" SelectionChanged="ComboBox_SelectionChanged" Grid.Column="2" Grid.Row="0" HorizontalAlignment="Stretch" VerticalContentAlignment="Center">
+                                        <ComboBox.Style>
+                                            <Style TargetType="ComboBox">
+                                                <Setter Property="IsEnabled" Value="True" />
+                                                <Setter Property="Foreground" Value="{StaticResource CBackground1}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding TriggerMode}" Value="{x:Static haptickle:HapticTriggerMode.Off}">
+                                                        <Setter Property="IsEnabled" Value="False" />
+                                                        <Setter Property="Foreground" Value="{StaticResource CForeground3}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ComboBox.Style>
+                                    </ComboBox>
+                                    <StackPanel Orientation="Horizontal" Grid.Column="2" Grid.Row="2" VerticalAlignment="Center">
+                                        <TextBlock Text="Min:" Margin="0,0,4,0" Foreground="{StaticResource CForeground1}" VerticalAlignment="Center" />
+                                        <TextBox Width="30" Text="{Binding PatternConfig.MinStrength, Mode=TwoWay}" Foreground="{StaticResource CForeground1}" />
+                                        <TextBlock Text="Max:" Margin="8,0,4,0" Foreground="{StaticResource CForeground1}" VerticalAlignment="Center" />
+                                        <TextBox Width="30" Text="{Binding PatternConfig.MaxStrength, Mode=TwoWay}" Foreground="{StaticResource CForeground1}" />
+                                        <TextBlock Text="Speed:" Margin="8,0,4,0" Foreground="{StaticResource CForeground1}" VerticalAlignment="Center" />
+                                        <TextBox Width="30" Text="{Binding PatternConfig.Speed, Mode=TwoWay}" Foreground="{StaticResource CForeground1}" />
+                                        <StackPanel.Style>
+                                            <Style TargetType="StackPanel">
+                                                <Setter Property="IsEnabled" Value="True" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding TriggerMode}" Value="{x:Static haptickle:HapticTriggerMode.Off}">
+                                                        <Setter Property="IsEnabled" Value="False" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </StackPanel.Style>
+                                    </StackPanel>
                                 </Grid>
-                                <Slider Minimum="0" Maximum="1" TickFrequency="0.01" IsSnapToTickEnabled="True" Value="{Binding HapticStrength, Mode=TwoWay}" ValueChanged="StrengthSlider_ValueChanged" HorizontalAlignment="Stretch" />
                             </StackPanel>
-                            <!-- ComboBox for Trigger Mode -->
-                            <ComboBox SelectedValue="{Binding TriggerMode, Mode=TwoWay}" SelectedValuePath="Tag" Width="90" Margin="0" VerticalContentAlignment="Center" Foreground="{StaticResource CBackground2}">
-                                <ComboBoxItem Content="OFF" Tag="{x:Static haptickle:HapticTriggerMode.Off}" Foreground="{StaticResource CBackground2}" />
-                                <ComboBoxItem Content="Constant" Tag="{x:Static haptickle:HapticTriggerMode.Constant}" Foreground="{StaticResource CBackground2}" />
-                                <ComboBoxItem Content="Proximity" Tag="{x:Static haptickle:HapticTriggerMode.Proximity}" Foreground="{StaticResource CBackground2}" />
-                                <ComboBoxItem Content="Velocity" Tag="{x:Static haptickle:HapticTriggerMode.Velocity}" Foreground="{StaticResource CBackground2}" />
-                                <ComboBoxItem Content="On change" Tag="{x:Static haptickle:HapticTriggerMode.OnChange}" Foreground="{StaticResource CBackground2}" />
-                            </ComboBox>
                             <Border Width="1" Margin="8,0,8,0" Background="{StaticResource CForeground1}" />
                             <ContentControl Content="{Binding HapticTriggerParams}">
                                 <ContentControl.Style>
@@ -98,9 +172,9 @@
                                 </ContentControl.Style>
                             </ContentControl>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="2,0,0,8">
+                        <StackPanel Orientation="Horizontal" Margin="2,0,0,0" Visibility="{Binding IsChecked, ElementName=InfoToggle, Converter={StaticResource BoolToVisibilityConverter}}">
                             <!-- Optional: Show warning icon for OFF -->
-                            <TextBlock Text="⚠" Margin="0,0,2,0" Foreground="Orange">
+                            <TextBlock Text="⚠" Margin="0,0,0,2" Foreground="{StaticResource COrange}">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Visibility" Value="Collapsed" />
@@ -119,7 +193,7 @@
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding TriggerMode}" Value="{x:Static haptickle:HapticTriggerMode.Off}">
                                                 <Setter Property="Text" Value="Disabled" />
-                                                <Setter Property="Foreground" Value="Orange" />
+                                                <Setter Property="Foreground" Value="{StaticResource COrange}" />
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding TriggerMode}" Value="{x:Static haptickle:HapticTriggerMode.Constant}">
                                                 <Setter Property="Text" Value="Vibrates with set strength when triggered" />

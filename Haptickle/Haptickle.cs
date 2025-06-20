@@ -24,9 +24,12 @@ public class HaptickleModule : Module
     private const ushort _TRACKER_HAPTIC_AXIS_ID = 1;
     private const ushort _DEFAULT_DELAY = 420;
     private const float _MIN_MARGIN = 0.02f;
+    private const float _DEFAULT_HAPTIC_STRENGTH = 1.0f;
+    private readonly Dictionary<string, float> _lastTriggerValues = new();
+    private readonly Dictionary<string, float> _lastTriggerDeltas = new();
+    private readonly Dictionary<string, DateTime> _triggerStartTimes = new();
     // Workaround: Track validity state for each trigger/parameter (bug with not keeping isValid when value conditions are met and maintained)
     private readonly Dictionary<string, bool> _parameterValidStates = new();
-    private readonly Dictionary<string, float> _strengthScalars = new();
 
     public CVRSystem? openVrSystem;
 
@@ -126,8 +129,21 @@ public class HaptickleModule : Module
             int index = 0;
             while (!pulseToken.Token.IsCancellationRequested)
             {
-                float scalar = scalarKey != null ? _strengthScalars[scalarKey] : 1.0f;
-                float strength = Math.Clamp(trigger.HapticStrength * scalar, 0.0f, 1.0f);
+                float value = 1.0f;
+                float delta = 0.0f;
+                float phase = 0.0f;
+
+                if (scalarKey != null)
+                {
+                    _lastTriggerValues.TryGetValue(scalarKey, out value);
+                    _lastTriggerDeltas.TryGetValue(scalarKey, out delta);
+                    if (_triggerStartTimes.TryGetValue(scalarKey, out DateTime start))
+                        phase = (float)(DateTime.UtcNow - start).TotalSeconds; 
+                }
+
+                float patterned = VibrationPattern.Apply(trigger.PatternConfig, value, delta, phase);
+                float strength = Math.Clamp(_DEFAULT_HAPTIC_STRENGTH * patterned, 0.0f, 1.0f);
+
                 if (openVrSystem == null || strength <= 0.0f)
                 {
                     await Task.Delay(_DEFAULT_DELAY, pulseToken.Token);
@@ -144,7 +160,7 @@ public class HaptickleModule : Module
         }, pulseToken.Token);
     }
 
-    private void StopPulseLoop(HapticTrigger trigger)
+    public void StopPulseLoop(HapticTrigger trigger)
     {
         string key = trigger.DeviceSerialNumber;
         if (_pulseTokens.TryGetValue(key, out CancellationTokenSource? pulseToken))
@@ -156,9 +172,14 @@ public class HaptickleModule : Module
 
     private void HandleConstant(HapticTrigger trigger, string key, bool isValid, bool wasValid, QueryResult result)
     {
-        _strengthScalars[key] = 1.0f;
+        _lastTriggerValues[key] = _DEFAULT_HAPTIC_STRENGTH;
+        _lastTriggerDeltas[key] = 0;
+
+        if (!_triggerStartTimes.ContainsKey(key))
+            _triggerStartTimes[key] = DateTime.UtcNow;
+
         if (result.JustBecameValid)
-            StartPulseLoop(trigger);
+            StartPulseLoop(trigger, key);
         else if (!isValid && wasValid)
             StopPulseLoop(trigger);
     }
@@ -166,7 +187,11 @@ public class HaptickleModule : Module
     private void HandleProximity(HapticTrigger trigger, string key, bool isValid, bool wasValid, ReceivedParameter receivedParameter)
     {
         float proximityValue = receivedParameter.GetValue<float>();
-        _strengthScalars[key] = proximityValue;
+        _lastTriggerValues[key] = proximityValue;
+        _lastTriggerDeltas[key] = 0;
+
+        if (!_triggerStartTimes.ContainsKey(key))
+            _triggerStartTimes[key] = DateTime.UtcNow;
 
         if (isValid && receivedParameter.Type == ParameterType.Float && !_pulseTokens.ContainsKey(trigger.DeviceSerialNumber))
             StartPulseLoop(trigger, key);
@@ -186,7 +211,11 @@ public class HaptickleModule : Module
 
         _lastFloatValues[key] = value;
         _lastValueTimestamps[key] = now;
-        _strengthScalars[key] = velocity;
+        _lastTriggerValues[key] = value;
+        _lastTriggerDeltas[key] = velocity;
+
+        if (!_triggerStartTimes.ContainsKey(key))
+            _triggerStartTimes[key] = DateTime.UtcNow;
 
         if (isValid && receivedParameter.Type == ParameterType.Float)
         {
@@ -198,17 +227,23 @@ public class HaptickleModule : Module
         else if (!isValid && wasValid)
         {
             _lastFloatValues[key] = 0.0f;
-            _strengthScalars[key] = 0.0f;
+            _lastTriggerValues[key] = 0.0f;
+            _lastTriggerDeltas[key] = 0.0f;
             StopPulseLoop(trigger);
         }
     }
 
     private void HandleOnChange(HapticTrigger trigger, string key, bool isValid, bool wasValid)
     {
-        _strengthScalars[key] = 1.0f;
+        _lastTriggerValues[key] = _DEFAULT_HAPTIC_STRENGTH;
+        _lastTriggerDeltas[key] = 0;
+
+        if (!_triggerStartTimes.ContainsKey(key))
+            _triggerStartTimes[key] = DateTime.UtcNow;
+
         if (isValid != wasValid)
         {
-            StartPulseLoop(trigger);
+            StartPulseLoop(trigger, key);
             Task.Run(async () =>
             {
                 await Task.Delay(_DEFAULT_DELAY);
