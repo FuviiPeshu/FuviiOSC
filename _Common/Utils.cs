@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using FuviiOSC.Haptickle;
 using VRCOSC.App.SDK.Parameters;
 using VRCOSC.App.SDK.Utils;
@@ -72,5 +74,10 @@ public class FuviiCommonUtils
             default:
                 return false;
         }
+    }
+
+    public static class EnumValuesGetter<T> where T : struct, Enum
+    {
+        public static IEnumerable<T> AllValues => Enum.GetValues(typeof(T)).Cast<T>();
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using FuviiOSC.Common;
 using Newtonsoft.Json;
@@ -14,6 +15,11 @@ public enum HapticTriggerMode
     Proximity,
     Velocity,
     OnChange
+}
+
+public static class HapticTriggerModeHelper
+{
+    public static IEnumerable<HapticTriggerMode> AllValues => FuviiCommonUtils.EnumValuesGetter<HapticTriggerMode>.AllValues;
 }
 
 public class HapticTrigger
@@ -45,7 +51,7 @@ public enum VibrationPatternType
 
 public static class VibrationPatternTypeHelper
 {
-    public static Array AllValues => Enum.GetValues(typeof(VibrationPatternType));
+    public static IEnumerable<VibrationPatternType> AllValues => FuviiCommonUtils.EnumValuesGetter<VibrationPatternType>.AllValues;
 }
 
 public class VibrationPatternConfig
