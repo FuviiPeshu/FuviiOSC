@@ -38,6 +38,8 @@ public class HaptickleModule : Module
 
     protected override void OnPreLoad()
     {
+        CreateSlider(HaptickleSetting.Timeout, "Timeout (s)", "How many seconds until haptic loop breaks in case of error/disconnect", 4, 1, 10, 1);
+
         SetRuntimeView(typeof(HaptickleModuleRuntimeView));
     }
 
@@ -93,6 +95,7 @@ public class HaptickleModule : Module
                 bool isValid = HaptickleTriggerUtils.EvaluateIsValid(trigger, result, receivedParameter, queryableParameter, wasValid);
                 _parameterValidStates[key] = isValid;
                 // --- END WORKAROUND ---
+                _lastValueTimestamps[key] = DateTime.UtcNow;
 
                 switch (trigger.TriggerMode)
                 {
@@ -137,6 +140,11 @@ public class HaptickleModule : Module
                 {
                     _lastTriggerValues.TryGetValue(scalarKey, out value);
                     _lastTriggerDeltas.TryGetValue(scalarKey, out delta);
+
+                    // Timeout to prevent infinite loops (e.g. if tracker is disconnected)
+                    if (_lastValueTimestamps.TryGetValue(scalarKey, out DateTime lastTime) && (DateTime.UtcNow - lastTime).TotalSeconds > GetTimeoutValue())
+                        break;
+
                     if (_triggerStartTimes.TryGetValue(scalarKey, out DateTime start))
                         phase = (float)(DateTime.UtcNow - start).TotalSeconds; 
                 }
@@ -252,9 +260,12 @@ public class HaptickleModule : Module
         }
     }
 
+    private float GetTimeoutValue() => GetSettingValue<int>(HaptickleSetting.Timeout);
+
     public enum HaptickleSetting
     {
-        HapticTriggers
+        HapticTriggers,
+        Timeout,
     }
 
     public enum HaptickleParameter
