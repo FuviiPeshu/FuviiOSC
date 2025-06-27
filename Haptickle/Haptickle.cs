@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,13 +17,14 @@ namespace FuviiOSC.Haptickle;
 public class HaptickleModule : Module
 {
     private readonly Dictionary<string, CancellationTokenSource> _pulseTokens = new();
+    private readonly Dictionary<string, CancellationTokenSource> _externalPulseTokens = new();
     private readonly Dictionary<string, float> _lastFloatValues = new();
     private readonly Dictionary<string, float> _lastTriggerValues = new();
     private readonly Dictionary<string, float> _lastTriggerDeltas = new();
     private readonly Dictionary<string, DateTime> _triggerStartTimes = new();
     private readonly Dictionary<string, DateTime> _lastValueTimestamps = new();
     // Workaround: Track validity state for each trigger/parameter (bug with not keeping isValid when value conditions are met and maintained)
-    private readonly Dictionary<string, bool> _parameterValidStates = new();
+    private readonly Dictionary<string, bool> _parameterValidStates = new();    
 
     private const ushort _MIN_HAPTIC_PULSE_DURATION = 20, _MAX_HAPTIC_PULSE_DURATION = 80, _DEFAULT_PULSE_INTERVAL = 32, _TRACKER_HAPTIC_AXIS_ID = 1, _DEFAULT_DELAY = 420;
     private const float _MIN_MARGIN = 0.02f, _DEFAULT_HAPTIC_STRENGTH = 1.0f;
@@ -30,11 +32,17 @@ public class HaptickleModule : Module
     public CVRSystem? openVrSystem;
 
     [ModulePersistent("hapticTriggers")]
-    public List<HapticTrigger> HapticTriggers { get; set; } = [];
+    public List<HapticTrigger> HapticTriggers { get; set; } = new();
+    [ModulePersistent("externalDevices")]
+    public ObservableCollection<DeviceMapping> ExternalDevices { get; set; } = new()
+    {
+        new DeviceMapping("Dynamics/OSC/GiggleTech/ProximityHeadPats", "192.168.3.36", 8888, "/motor")
+    };
 
     protected override void OnPreLoad()
     {
         CreateSlider(HaptickleSetting.Timeout, "Timeout (s)", "How many seconds until haptic loop breaks in case of error/disconnect", 4, 1, 10, 1);
+        CreateSlider(HaptickleSetting.ExternalDeviceStrengthLimit, "External devices maximum vibration", "Limit vibration of the external devices", 0.5f, 0.0f, 1.0f, 0.01f);
 
         SetRuntimeView(typeof(HaptickleModuleRuntimeView));
     }
@@ -71,6 +79,10 @@ public class HaptickleModule : Module
             pulseToken.Cancel();
         _pulseTokens.Clear();
 
+        foreach (CancellationTokenSource pulseToken in _externalPulseTokens.Values)
+            pulseToken.Cancel();
+        _externalPulseTokens.Clear();
+
         return Task.CompletedTask;
     }
 
@@ -88,7 +100,7 @@ public class HaptickleModule : Module
                 // --- WORKAROUND: Maintain our own "isValid" state due to VRCOSC bug ---
                 string key = $"{trigger.DeviceSerialNumber}:{queryableParameter.Name.Value}";
                 bool wasValid = _parameterValidStates.TryGetValue(key, out bool prevValid) && prevValid;
-                bool isValid = HaptickleTriggerUtils.EvaluateIsValid(trigger, result, receivedParameter, queryableParameter, wasValid);
+                bool isValid = HaptickleUtils.EvaluateIsValid(trigger, result, receivedParameter, queryableParameter, wasValid);
                 _parameterValidStates[key] = isValid;
                 // --- END WORKAROUND ---
                 _lastValueTimestamps[key] = DateTime.UtcNow;
@@ -110,6 +122,26 @@ public class HaptickleModule : Module
                     case HapticTriggerMode.OnChange:
                         HandleOnChange(trigger, key, isValid, wasValid);
                         break;
+                }
+            }
+        }
+
+        foreach (DeviceMapping mapping in ExternalDevices)
+        {
+            if (receivedParameter.Name.Equals(mapping.Parameter))
+            {
+                float value = receivedParameter.GetValue<float>();
+                string extKey = $"{mapping.DeviceIp}:{mapping.Parameter}";
+                _lastValueTimestamps[extKey] = DateTime.UtcNow;
+
+                if (value > 0.01f)
+                {
+                    StartExternalPatternLoop(mapping, value, 0.0f, extKey);
+                }
+                else
+                {
+                    StopExternalPatternLoop(mapping);
+                    HaptickleUtils.SendOsc(mapping.DeviceIp, mapping.DevicePort, mapping.DeviceOscPath, 0);
                 }
             }
         }
@@ -145,7 +177,7 @@ public class HaptickleModule : Module
                         break;
 
                     if (_triggerStartTimes.TryGetValue(scalarKey, out DateTime start))
-                        phase = (float)(DateTime.UtcNow - start).TotalSeconds; 
+                        phase = (float)(DateTime.UtcNow - start).TotalSeconds;
                 }
 
                 float patterned = VibrationPattern.Apply(trigger.PatternConfig, value, delta, phase);
@@ -174,6 +206,51 @@ public class HaptickleModule : Module
         {
             pulseToken.Cancel();
             _pulseTokens.Remove(key);
+        }
+    }
+
+    private void StartExternalPatternLoop(DeviceMapping mapping, float value = 1.0f, float delta = 0.0f, string? key = null)
+    {
+        StopExternalPatternLoop(mapping);
+
+        var tokenSource = new CancellationTokenSource();
+        _externalPulseTokens[mapping.DeviceIp] = tokenSource;
+
+        Task.Run(async () =>
+        {
+            DateTime start = DateTime.UtcNow;
+            float patternDuration = 0.5f;
+            if (mapping.PatternConfig != null && mapping.PatternConfig.Speed > 0)
+                patternDuration = Math.Max(0.1f, 1.0f / mapping.PatternConfig.Speed);
+
+            while ((DateTime.UtcNow - start).TotalSeconds < patternDuration && !tokenSource.Token.IsCancellationRequested)
+            {
+                if (key != null && _lastValueTimestamps.TryGetValue(key, out DateTime lastTime) &&
+                    (DateTime.UtcNow - lastTime).TotalSeconds > GetTimeoutValue())
+                {
+                    break;
+                }
+
+                float phase = (float)(DateTime.UtcNow - start).TotalSeconds;
+                float patterned = VibrationPattern.Apply(mapping.PatternConfig, value, delta, phase);
+                float strength = Math.Clamp(GetExternalDeviceStrengthLimit() * patterned, 0.0f, 1.0f);
+                int oscValue = (int)Math.Clamp(strength * 255.0f, 0, 255);
+
+                HaptickleUtils.SendOsc(mapping.DeviceIp, mapping.DevicePort, mapping.DeviceOscPath, oscValue);
+                await Task.Delay(_DEFAULT_PULSE_INTERVAL, tokenSource.Token);
+            }
+
+            HaptickleUtils.SendOsc(mapping.DeviceIp, mapping.DevicePort, mapping.DeviceOscPath, 0);
+            StopExternalPatternLoop(mapping);
+        }, tokenSource.Token);
+    }
+
+    private void StopExternalPatternLoop(DeviceMapping mapping)
+    {
+        if (_externalPulseTokens.TryGetValue(mapping.DeviceIp, out var token))
+        {
+            token.Cancel();
+            _externalPulseTokens.Remove(mapping.DeviceIp);
         }
     }
 
@@ -252,11 +329,13 @@ public class HaptickleModule : Module
     }
 
     private float GetTimeoutValue() => GetSettingValue<int>(HaptickleSetting.Timeout);
+    private float GetExternalDeviceStrengthLimit() => GetSettingValue<float>(HaptickleSetting.ExternalDeviceStrengthLimit);
 
     public enum HaptickleSetting
     {
         HapticTriggers,
         Timeout,
+        ExternalDeviceStrengthLimit,
     }
 
     public enum HaptickleParameter

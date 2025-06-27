@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Net.Sockets;
+using System.Text;
 using FuviiOSC.Common;
 using Newtonsoft.Json;
 using VRCOSC.App.SDK.Parameters;
@@ -92,7 +94,26 @@ public static class VibrationPattern
     }
 }
 
-public static class HaptickleTriggerUtils
+[Serializable]
+public class DeviceMapping
+{
+    public string Parameter { get; set; }
+    public string DeviceIp { get; set; }
+    public int DevicePort { get; set; } = 8888;
+    public string DeviceOscPath { get; set; } = "/motor";
+    public VibrationPatternConfig PatternConfig { get; set; } = new VibrationPatternConfig();
+
+    public DeviceMapping(string parameter, string deviceIp, int devicePort, string deviceOscPath)
+    {
+        Parameter = parameter;
+        DeviceIp = deviceIp;
+        DevicePort = devicePort;
+        DeviceOscPath = deviceOscPath;
+        PatternConfig = new VibrationPatternConfig();
+    }
+}
+
+public static class HaptickleUtils
 {
     public static bool EvaluateIsValid(
         HapticTrigger trigger,
@@ -111,5 +132,27 @@ public static class HaptickleTriggerUtils
             return FuviiCommonUtils.IsParameterActuallyValid(receivedParameter, queryableParameter);
         }
         return wasValid;
+    }
+
+    public static void SendOsc(string ip, int port, string address, int value)
+    {
+        List<byte> msg = new();
+        using UdpClient udp = new UdpClient();
+        udp.Connect(ip, port);
+
+        // Address (OSC string with null padding to 4)
+        byte[] addrBytes = Encoding.ASCII.GetBytes(address);
+        msg.AddRange(addrBytes);
+        msg.Add(0);
+        while (msg.Count % 4 != 0) msg.Add(0);
+
+        msg.AddRange(new byte[] { (byte)',', (byte)'i', 0, 0 });
+
+        byte[] intBytes = BitConverter.GetBytes(value);
+        if (BitConverter.IsLittleEndian)
+            Array.Reverse(intBytes);
+        msg.AddRange(intBytes);
+
+        udp.Send(msg.ToArray(), msg.Count);
     }
 }
