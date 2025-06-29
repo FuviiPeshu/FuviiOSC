@@ -95,10 +95,11 @@ public static class VibrationPattern
 }
 
 [Serializable]
-public class DeviceMapping
+public class DeviceMapping : IEquatable<DeviceMapping>
 {
-    public string Parameter { get; set; }
-    public string DeviceIp { get; set; }
+    public string ID { get; set; } = Guid.NewGuid().ToString();
+    public string Parameter { get; set; } = "Parameter";
+    public string DeviceIp { get; set; } = "192.168.";
     public int DevicePort { get; set; } = 8888;
     public string DeviceOscPath { get; set; } = "/motor";
     public VibrationPatternConfig PatternConfig { get; set; } = new VibrationPatternConfig();
@@ -110,6 +111,17 @@ public class DeviceMapping
         DevicePort = devicePort;
         DeviceOscPath = deviceOscPath;
         PatternConfig = new VibrationPatternConfig();
+    }
+
+    public DeviceMapping()
+    {
+    }
+
+    public bool Equals(DeviceMapping? other)
+    {
+        if (ReferenceEquals(null, other)) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return ID == other.ID;
     }
 }
 
@@ -134,7 +146,7 @@ public static class HaptickleUtils
         return wasValid;
     }
 
-    public static void SendOsc(string ip, int port, string address, int value)
+    public static void SendOscMessage(string ip, int port, string address, int value)
     {
         List<byte> msg = new();
         using UdpClient udp = new UdpClient();
