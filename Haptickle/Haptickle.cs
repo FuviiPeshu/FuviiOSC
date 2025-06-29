@@ -27,7 +27,7 @@ public class HaptickleModule : Module
     private readonly Dictionary<string, bool> _parameterValidStates = new();    
 
     private const ushort _MIN_HAPTIC_PULSE_DURATION = 20, _MAX_HAPTIC_PULSE_DURATION = 80, _DEFAULT_PULSE_INTERVAL = 32, _TRACKER_HAPTIC_AXIS_ID = 1, _DEFAULT_DELAY = 420;
-    private const float _MIN_MARGIN = 0.02f, _DEFAULT_HAPTIC_STRENGTH = 1.0f;
+    private const float _MIN_MARGIN = 0.02f;
 
     public CVRSystem? openVrSystem;
 
@@ -37,7 +37,6 @@ public class HaptickleModule : Module
     protected override void OnPreLoad()
     {
         CreateSlider(HaptickleSetting.Timeout, "Timeout (s)", "How many seconds until haptic loop breaks in case of error/disconnect", 4, 1, 10, 1);
-        CreateSlider(HaptickleSetting.ExternalDeviceStrengthLimit, "External devices maximum vibration", "Limit vibration of the external devices", 0.5f, 0.0f, 1.0f, 0.01f);
 
         CreateCustomSetting(HaptickleSetting.ExternalDeviceList, new HaptickleModuleSetting());
 
@@ -135,7 +134,7 @@ public class HaptickleModule : Module
                 float value = receivedParameter.GetValue<float>();
                 string key = $"{mapping.DeviceIp}:{mapping.Parameter}";
                 _lastTriggerValues[key] = value;
-                _lastTriggerDeltas[key] = 0;
+                _lastTriggerDeltas[key] = 0.0f;
                 _lastValueTimestamps[key] = DateTime.UtcNow;
 
                 if (value > float.Epsilon && !_externalPulseTokens.ContainsKey(mapping.DeviceIp))
@@ -185,15 +184,14 @@ public class HaptickleModule : Module
                 }
 
                 float patterned = VibrationPattern.Apply(trigger.PatternConfig, value, delta, phase);
-                float strength = Math.Clamp(_DEFAULT_HAPTIC_STRENGTH * patterned, 0.0f, 1.0f);
 
-                if (openVrSystem == null || strength <= 0.0f)
+                if (openVrSystem == null || patterned <= float.Epsilon)
                 {
                     await Task.Delay(_DEFAULT_DELAY, pulseToken.Token);
                     continue;
                 }
 
-                ushort pulseDuration = (ushort)(_MIN_HAPTIC_PULSE_DURATION + (strength * (_MAX_HAPTIC_PULSE_DURATION - _MIN_HAPTIC_PULSE_DURATION)));
+                ushort pulseDuration = (ushort)(_MIN_HAPTIC_PULSE_DURATION + (patterned * (_MAX_HAPTIC_PULSE_DURATION - _MIN_HAPTIC_PULSE_DURATION)));
                 openVrSystem.TriggerHapticPulse((uint)trigger.DeviceIndex, _TRACKER_HAPTIC_AXIS_ID, pulseDuration);
                 index += 1;
 
@@ -244,8 +242,7 @@ public class HaptickleModule : Module
                 }
 
                 float patterned = VibrationPattern.Apply(mapping.PatternConfig, value, delta, phase);
-                float strength = Math.Clamp(GetExternalDeviceStrengthLimit() * patterned, 0.0f, 1.0f);
-                int oscValue = (int)Math.Clamp(strength * 255.0f, 0, 255);
+                int oscValue = (int)Math.Clamp(patterned * 255.0f, 0, 255);
 
                 HaptickleUtils.SendOscMessage(mapping.DeviceIp, mapping.DevicePort, mapping.DeviceOscPath, oscValue);
                 await Task.Delay(_DEFAULT_PULSE_INTERVAL, tokenSource.Token);
@@ -267,8 +264,8 @@ public class HaptickleModule : Module
 
     private void HandleConstant(HapticTrigger trigger, string key, bool isValid, bool wasValid, QueryResult result)
     {
-        _lastTriggerValues[key] = _DEFAULT_HAPTIC_STRENGTH;
-        _lastTriggerDeltas[key] = 0;
+        _lastTriggerValues[key] = 1.0f;
+        _lastTriggerDeltas[key] = 0.0f;
         _triggerStartTimes.TryAdd(key, DateTime.UtcNow);
 
         if (result.JustBecameValid)
@@ -281,7 +278,7 @@ public class HaptickleModule : Module
     {
         float proximityValue = receivedParameter.GetValue<float>();
         _lastTriggerValues[key] = proximityValue;
-        _lastTriggerDeltas[key] = 0;
+        _lastTriggerDeltas[key] = 0.0f;
         _triggerStartTimes.TryAdd(key, DateTime.UtcNow);
 
         if (isValid && receivedParameter.Type == ParameterType.Float && !_pulseTokens.ContainsKey(trigger.DeviceSerialNumber))
@@ -324,8 +321,8 @@ public class HaptickleModule : Module
 
     private void HandleOnChange(HapticTrigger trigger, string key, bool isValid, bool wasValid)
     {
-        _lastTriggerValues[key] = _DEFAULT_HAPTIC_STRENGTH;
-        _lastTriggerDeltas[key] = 0;
+        _lastTriggerValues[key] = 1.0f;
+        _lastTriggerDeltas[key] = 0.0f;
         _triggerStartTimes.TryAdd(key, DateTime.UtcNow);
 
         if (isValid != wasValid)
@@ -340,14 +337,12 @@ public class HaptickleModule : Module
     }
 
     private float GetTimeoutValue() => GetSettingValue<int>(HaptickleSetting.Timeout);
-    private float GetExternalDeviceStrengthLimit() => GetSettingValue<float>(HaptickleSetting.ExternalDeviceStrengthLimit);
     private List<DeviceMapping> GetExternalDevices() => GetSettingValue<List<DeviceMapping>>(HaptickleSetting.ExternalDeviceList);
 
     public enum HaptickleSetting
     {
         HapticTriggers,
         Timeout,
-        ExternalDeviceStrengthLimit,
         ExternalDeviceList,
     }
 
