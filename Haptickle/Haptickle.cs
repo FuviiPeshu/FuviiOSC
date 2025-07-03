@@ -145,14 +145,33 @@ public class HaptickleModule : Module
                 _lastTriggerDeltas[key] = 0.0f;
                 _lastValueTimestamps[key] = DateTime.UtcNow;
 
-                if (value > float.Epsilon && !_externalPulseTokens.ContainsKey(mapping.DeviceIp))
+                switch (mapping.TriggerMode)
                 {
-                    StartExternalPatternLoop(mapping, key);
-                }
-                else if (value <= float.Epsilon)
-                {
-                    StopExternalPatternLoop(mapping);
-                    HaptickleUtils.SendOscMessage(mapping.DeviceIp, mapping.DevicePort, mapping.DeviceOscPath, 0);
+                    case HapticTriggerMode.Off:
+                        StopExternalPatternLoop(mapping);
+                        HaptickleUtils.SendOscMessage(mapping.DeviceIp, mapping.DevicePort, mapping.DeviceOscPath, 0);
+                        break;
+                    case HapticTriggerMode.Constant:
+                        if (value > float.Epsilon && !_externalPulseTokens.ContainsKey(mapping.DeviceIp))
+                            StartExternalPatternLoop(mapping, key, mapping.TriggerMode);
+                        else if (value <= float.Epsilon)
+                        {
+                            StopExternalPatternLoop(mapping);
+                            HaptickleUtils.SendOscMessage(mapping.DeviceIp, mapping.DevicePort, mapping.DeviceOscPath, 0);
+                        }
+                        break;
+                    case HapticTriggerMode.Proximity:
+                    case HapticTriggerMode.Velocity:
+                    case HapticTriggerMode.OnChange:
+                        // For these, always start/stop based on value and mode
+                        if (value > float.Epsilon && !_externalPulseTokens.ContainsKey(mapping.DeviceIp))
+                            StartExternalPatternLoop(mapping, key, mapping.TriggerMode);
+                        else if (value <= float.Epsilon)
+                        {
+                            StopExternalPatternLoop(mapping);
+                            HaptickleUtils.SendOscMessage(mapping.DeviceIp, mapping.DevicePort, mapping.DeviceOscPath, 0);
+                        }
+                        break;
                 }
             }
         }
@@ -219,7 +238,7 @@ public class HaptickleModule : Module
         }
     }
 
-    private void StartExternalPatternLoop(DeviceMapping mapping, string? key = null)
+    private void StartExternalPatternLoop(DeviceMapping mapping, string? key = null, HapticTriggerMode mode = HapticTriggerMode.Constant)
     {
         StopExternalPatternLoop(mapping);
 
@@ -249,11 +268,35 @@ public class HaptickleModule : Module
                         break;
                 }
 
-                float patterned = VibrationPattern.Apply(mapping.PatternConfig, value, delta, phase);
-                int oscValue = (int)Math.Clamp(patterned * 255.0f, 0, 255);
+                float patterned = 0.0f;
+                switch (mode)
+                {
+                    case HapticTriggerMode.Off:
+                        patterned = 0.0f;
+                        break;
+                    case HapticTriggerMode.Constant:
+                        patterned = VibrationPattern.Apply(mapping.PatternConfig, 1.0f, 0.0f, phase);
+                        break;
+                    case HapticTriggerMode.Proximity:
+                        patterned = VibrationPattern.Apply(mapping.PatternConfig, value, 0.0f, phase);
+                        break;
+                    case HapticTriggerMode.Velocity:
+                        patterned = VibrationPattern.Apply(mapping.PatternConfig, value, delta, phase);
+                        break;
+                    case HapticTriggerMode.OnChange:
+                        // Pulse once for a short duration
+                        patterned = value > float.Epsilon ? VibrationPattern.Apply(mapping.PatternConfig, 1.0f, 0.0f, phase) : 0.0f;
+                        break;
+                }
 
+                int oscValue = (int)Math.Clamp(patterned * 255.0f, 0, 255);
                 HaptickleUtils.SendOscMessage(mapping.DeviceIp, mapping.DevicePort, mapping.DeviceOscPath, oscValue);
+
                 await Task.Delay(_DEFAULT_PULSE_INTERVAL, tokenSource.Token);
+
+                // For OnChange, stop after one pulse
+                if (mode == HapticTriggerMode.OnChange)
+                    break;
             }
 
             HaptickleUtils.SendOscMessage(mapping.DeviceIp, mapping.DevicePort, mapping.DeviceOscPath, 0);

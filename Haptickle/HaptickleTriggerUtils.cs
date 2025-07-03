@@ -102,6 +102,7 @@ public class DeviceMapping : IEquatable<DeviceMapping>
     public string DeviceIp { get; set; } = "192.168.";
     public int DevicePort { get; set; } = 8888;
     public string DeviceOscPath { get; set; } = "/motor";
+    public HapticTriggerMode TriggerMode { get; set; } = HapticTriggerMode.Proximity;
     public VibrationPatternConfig PatternConfig { get; set; } = new VibrationPatternConfig();
 
     public DeviceMapping(string parameter, string deviceIp, int devicePort, string deviceOscPath)
@@ -110,6 +111,7 @@ public class DeviceMapping : IEquatable<DeviceMapping>
         DeviceIp = deviceIp;
         DevicePort = devicePort;
         DeviceOscPath = deviceOscPath;
+        TriggerMode = HapticTriggerMode.Proximity;
         PatternConfig = new VibrationPatternConfig();
     }
 

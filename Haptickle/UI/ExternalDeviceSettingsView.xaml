@@ -30,22 +30,26 @@
 												<ColumnDefinition Width="Auto" />
 											</Grid.ColumnDefinitions>
 											<StackPanel Orientation="Vertical">
-												<StackPanel Orientation="Horizontal" Margin="0" VerticalAlignment="Center">
-													<TextBlock Text="IP:" Foreground="{DynamicResource CForeground2}" Margin="0,0,4,0" VerticalAlignment="Center" />
+												<StackPanel Orientation="Horizontal" Margin="0,0,0,4" VerticalAlignment="Center">
+													<TextBlock Text="IP:" Foreground="{DynamicResource CForeground2}" Margin="4,0,4,0" VerticalAlignment="Center" />
 													<TextBox Text="{Binding DeviceIp, Mode=TwoWay}" FontWeight="Bold" Foreground="{DynamicResource CForeground1}" MinWidth="128" />
 													<TextBlock Text="Port:" Foreground="{DynamicResource CForeground2}" Margin="16,0,4,0" VerticalAlignment="Center" />
 													<TextBox Text="{Binding DevicePort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Foreground="{DynamicResource CForeground1}" MinWidth="64" />
 													<TextBlock Text="OSC control path:" Foreground="{DynamicResource CForeground2}" Margin="16,0,4,0" VerticalAlignment="Center" />
 													<TextBox Text="{Binding DeviceOscPath, Mode=TwoWay}" Foreground="{DynamicResource CForeground1}" MinWidth="100" />
 												</StackPanel>
-												<StackPanel Orientation="Horizontal" Margin="0,8,0,8" VerticalAlignment="Center">
-													<TextBlock Text="Parameter:" Foreground="{DynamicResource CForeground2}" Margin="0,0,4,0" />
+												<StackPanel Orientation="Horizontal" Margin="0,4,0,4" VerticalAlignment="Center">
+													<TextBlock Text="Parameter:" Foreground="{DynamicResource CForeground2}" Margin="4,0,4,0" />
 													<TextBox Text="{Binding Parameter, Mode=TwoWay}" Foreground="{DynamicResource CForeground1}" MinWidth="256" Padding="4,0,4,0" />
 												</StackPanel>
-												<StackPanel Orientation="Horizontal" Margin="0" VerticalAlignment="Center">
-													<TextBlock Text="Pattern:" Foreground="{DynamicResource CForeground2}" Width="60" VerticalAlignment="Center" />
+												<StackPanel Orientation="Horizontal" Margin="0,4,0,4" VerticalAlignment="Center">
+													<TextBlock Text="Mode:" Foreground="{DynamicResource CForeground2}" Margin="4,0,4,0" VerticalAlignment="Center" />
+													<ComboBox ItemsSource="{Binding Source={x:Static haptickle:HapticTriggerModeHelper.AllValues}}" SelectedItem="{Binding TriggerMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="120" FontSize="14" ToolTip="Select the haptic trigger mode for this device" />
+													<TextBlock Text="Pattern:" Foreground="{DynamicResource CForeground2}" Margin="16,0,4,0" VerticalAlignment="Center" />
 													<ComboBox ItemsSource="{x:Static haptickle:VibrationPatternTypeHelper.AllValues}" SelectedItem="{Binding PatternConfig.Pattern, Mode=TwoWay}" Width="100" FontSize="14" />
-													<TextBlock Text="Min:" Foreground="{DynamicResource CForeground2}" Margin="16,0,4,0" VerticalAlignment="Center" />
+												</StackPanel>
+												<StackPanel Orientation="Horizontal" Margin="0,4,0,0" VerticalAlignment="Center">
+													<TextBlock Text="Min:" Foreground="{DynamicResource CForeground2}" Margin="4,0,4,0" VerticalAlignment="Center" />
 													<xctk:DoubleUpDown Value="{Binding PatternConfig.MinStrength, Mode=TwoWay}" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Width="64" FontSize="14" />
 													<TextBlock Text="Max:" Foreground="{DynamicResource CForeground2}" Margin="16,0,4,0" VerticalAlignment="Center" />
 													<xctk:DoubleUpDown Value="{Binding PatternConfig.MaxStrength, Mode=TwoWay}" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Width="64" FontSize="14" />
