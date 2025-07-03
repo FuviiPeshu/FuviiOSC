@@ -84,16 +84,17 @@ This is made possible thanks to the [VRChat 2025.1.2 update](https://docs.vrchat
 
 ### 📳 Haptickle 
 
-**Haptickle** triggers haptic feedback on Vive trackers (if vibration motor is attached) based on avatar parameters received via OSC.
+**Haptickle** triggers haptic feedback on Vive trackers (if vibration motor is attached) and external devices via IP, based on avatar parameters received via OSC.
 
-> 📝 Note: Motor needs to be attached to the proper pogo pins (1 - general purpose output pin + 2 - ground).  
+> 📝 Note for Vive trackers: Motor needs to be attached to the proper pogo pins (1 - general purpose output pin + 2 - ground).  
 Manual: https://dl.vive.com/Tracker/Guideline/HTC_Vive_Tracker_Developer_Guidelines_v1.4.pdf
 
 #### ✨ Features
 
-- 🎚 **Per-tracker configuration:** Assign haptic triggers to individual Vive trackers by serial number
-- 🛠 **Customizable haptic strength:** Adjust the intensity for each tracker
-- 🔄 **Automatic device detection:** Trackers are automatically detected and updated as they are connected or disconnected
+- 🎚 **Per-device configuration:** Assign haptic triggers to individual device (Vive trackers by serial number; external devices by IP address, port and OSC control path)
+- 🛠 **Customizable haptic strength:** Adjust the intensity for each device
+- 🔄 **Automatic SteamVR device detection:** Trackers are automatically detected and updated as they are connected or disconnected
+- 🌐 **External device support:** External devices must be set up manually via settings menu (OSC UDP)
 
 #### ❓ How to use
 
@@ -101,5 +102,10 @@ Manual: https://dl.vive.com/Tracker/Guideline/HTC_Vive_Tracker_Developer_Guideli
 2. **Connect your Vive trackers** and ensure they appear in the device list inside **Runtime** view
 3. **Add or edit haptic triggers:**
    - Set the haptic strength and define the OSC parameter(s) that will activate the haptic pulse
+4. **(Optional) Add external devices:**
+   - In the module settings, add a new external device entry
+   - Specify the OSC parameter to listen for, the device's IP address, port and OSC path
+   - Choose the vibration pattern, trigger mode and adjust strength for each device
 
+![Settings view with timeout and external devices](https://github.com/user-attachments/assets/d39e67c1-33bf-4ace-b6ff-50c541219d85)
 ![Run tab with tracker haptic settings](https://github.com/user-attachments/assets/598affe0-b0d6-447f-b224-eaa079d7feea)
