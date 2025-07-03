@@ -15,48 +15,45 @@
 		<common:InverseBooleanConverter x:Key="InverseBooleanConverter" />
 		<common:NonEmptyStringToVisibilityConverter x:Key="NonEmptyStringToVisibilityConverter" />
 	</UserControl.Resources>
-	<GroupBox Header="External Devices" Visibility="{Binding Attribute.Count, Converter={StaticResource AllButFirstToVisibilityConverter}}" Foreground="{DynamicResource CForeground1}" Margin="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalAlignment="Center" VerticalContentAlignment="Center">
-		<StackPanel>
-			<ListView ItemsSource="{Binding Attribute}" Background="{DynamicResource CBackground2}" Padding="0" Margin="0" BorderThickness="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalAlignment="Center" VerticalContentAlignment="Center" AlternationCount="1000">
+		<StackPanel Background="{DynamicResource CBackground1}">
+			<ListView ItemsSource="{Binding Attribute}" Background="{DynamicResource CBackground2}" Padding="0" Margin="1,1,1,0" BorderThickness="0" FontSize="16" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalAlignment="Center" VerticalContentAlignment="Center" AlternationCount="1000">
 				<ListView.ItemContainerStyle>
 					<Style TargetType="ListViewItem">
 						<Setter Property="Template">
 							<Setter.Value>
 								<ControlTemplate>
-									<Border
-										Background="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}, Path=(ItemsControl.AlternationIndex), Converter={StaticResource AlternatingColourConverter}}"
-										VerticalAlignment="Top">
-										<Grid VerticalAlignment="Center">
+									<Border Background="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}, Path=(ItemsControl.AlternationIndex), Converter={StaticResource AlternatingColourConverter}}" VerticalAlignment="Top">
+										<Grid VerticalAlignment="Center" Margin="4,8,4,8">
 											<Grid.ColumnDefinitions>
 												<ColumnDefinition Width="*" />
 												<ColumnDefinition Width="10" />
 												<ColumnDefinition Width="Auto" />
 											</Grid.ColumnDefinitions>
 											<StackPanel Orientation="Vertical">
-												<StackPanel Orientation="Horizontal" Margin="0,0,0,0">
-													<TextBlock Text="IP:" Foreground="{DynamicResource CForeground2}" Margin="0,0,4,0" VerticalAlignment="Center"/>
-													<TextBox Text="{Binding DeviceIp, Mode=TwoWay}" FontWeight="Bold" Foreground="{DynamicResource CForeground1}" Width="120"/>
-													<TextBlock Text="Port:" Foreground="{DynamicResource CForeground2}" Margin="12,0,0,0" VerticalAlignment="Center"/>
-													<TextBox Text="{Binding DevicePort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Foreground="{DynamicResource CForeground1}" Width="60"/>
-													<TextBlock Text="OSC Path:" Foreground="{DynamicResource CForeground2}" Margin="12,0,0,0" VerticalAlignment="Center"/>
-													<TextBox Text="{Binding DeviceOscPath, Mode=TwoWay}" Foreground="{DynamicResource CForeground1}" Width="80"/>
+												<StackPanel Orientation="Horizontal" Margin="0" VerticalAlignment="Center">
+													<TextBlock Text="IP:" Foreground="{DynamicResource CForeground2}" Margin="0,0,4,0" VerticalAlignment="Center" />
+													<TextBox Text="{Binding DeviceIp, Mode=TwoWay}" FontWeight="Bold" Foreground="{DynamicResource CForeground1}" MinWidth="128" />
+													<TextBlock Text="Port:" Foreground="{DynamicResource CForeground2}" Margin="16,0,4,0" VerticalAlignment="Center" />
+													<TextBox Text="{Binding DevicePort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Foreground="{DynamicResource CForeground1}" MinWidth="64" />
+													<TextBlock Text="OSC control path:" Foreground="{DynamicResource CForeground2}" Margin="16,0,4,0" VerticalAlignment="Center" />
+													<TextBox Text="{Binding DeviceOscPath, Mode=TwoWay}" Foreground="{DynamicResource CForeground1}" MinWidth="100" />
 												</StackPanel>
-												<StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+												<StackPanel Orientation="Horizontal" Margin="0,8,0,8" VerticalAlignment="Center">
 													<TextBlock Text="Parameter:" Foreground="{DynamicResource CForeground2}" Margin="0,0,4,0" />
-													<TextBox Text="{Binding Parameter, Mode=TwoWay}" Foreground="{DynamicResource CForeground1}" />
+													<TextBox Text="{Binding Parameter, Mode=TwoWay}" Foreground="{DynamicResource CForeground1}" MinWidth="256" Padding="4,0,4,0" />
 												</StackPanel>
-												<StackPanel Orientation="Horizontal" Margin="0,8,0,0" VerticalAlignment="Center">
-													<TextBlock Text="Pattern:" Foreground="{DynamicResource CForeground2}" Width="60" VerticalAlignment="Center"/>
-													<ComboBox ItemsSource="{x:Static haptickle:VibrationPatternTypeHelper.AllValues}" SelectedItem="{Binding PatternConfig.Pattern, Mode=TwoWay}" Width="100" />
-													<TextBlock Text="Min:" Foreground="{DynamicResource CForeground2}" Margin="12,0,0,0" VerticalAlignment="Center"/>
-													<xctk:DoubleUpDown Value="{Binding PatternConfig.MinStrength, Mode=TwoWay}" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Width="64" />
-													<TextBlock Text="Max:" Foreground="{DynamicResource CForeground2}" Margin="12,0,0,0" VerticalAlignment="Center"/>
-													<xctk:DoubleUpDown Value="{Binding PatternConfig.MaxStrength, Mode=TwoWay}" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Width="64" />
-													<TextBlock Text="Speed:" Foreground="{DynamicResource CForeground2}" Margin="12,0,0,0" VerticalAlignment="Center"/>
-													<xctk:DoubleUpDown Value="{Binding PatternConfig.Speed, Mode=TwoWay}" Minimum="0.01" Maximum="4" Increment="0.01" FormatString="F2" Width="64" />
+												<StackPanel Orientation="Horizontal" Margin="0" VerticalAlignment="Center">
+													<TextBlock Text="Pattern:" Foreground="{DynamicResource CForeground2}" Width="60" VerticalAlignment="Center" />
+													<ComboBox ItemsSource="{x:Static haptickle:VibrationPatternTypeHelper.AllValues}" SelectedItem="{Binding PatternConfig.Pattern, Mode=TwoWay}" Width="100" FontSize="14" />
+													<TextBlock Text="Min:" Foreground="{DynamicResource CForeground2}" Margin="16,0,4,0" VerticalAlignment="Center" />
+													<xctk:DoubleUpDown Value="{Binding PatternConfig.MinStrength, Mode=TwoWay}" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Width="64" FontSize="14" />
+													<TextBlock Text="Max:" Foreground="{DynamicResource CForeground2}" Margin="16,0,4,0" VerticalAlignment="Center" />
+													<xctk:DoubleUpDown Value="{Binding PatternConfig.MaxStrength, Mode=TwoWay}" Minimum="0" Maximum="1" Increment="0.01" FormatString="F2" Width="64" FontSize="14" />
+													<TextBlock Text="Speed:" Foreground="{DynamicResource CForeground2}" Margin="16,0,4,0" VerticalAlignment="Center" />
+													<xctk:DoubleUpDown Value="{Binding PatternConfig.Speed, Mode=TwoWay}" Minimum="0.01" Maximum="4" Increment="0.01" FormatString="F2" Width="64" FontSize="14" />
 												</StackPanel>
 											</StackPanel>
-											<core:SpacedStackPanel Grid.Column="2" Spacing="5" FlowDirection="RightToLeft" Orientation="Horizontal" Margin="8 0">
+											<core:SpacedStackPanel Grid.Column="2" Spacing="5" FlowDirection="RightToLeft" Orientation="Horizontal" Margin="0,0,4,0">
 												<core:IconButton ButtonColour="Red" Icon="Solid_Minus" Width="25" Height="25" Click="RemoveDeviceButton_OnClick" Tag="{Binding}" />
 											</core:SpacedStackPanel>
 										</Grid>
@@ -67,7 +64,7 @@
 					</Style>
 				</ListView.ItemContainerStyle>
 			</ListView>
-			<Border Background="{StaticResource CBackground1}">
+			<Border Background="{DynamicResource CBackground1}">
 				<core:IconButton
 					ButtonColour="Green"
 					Width="100"
@@ -78,5 +75,4 @@
 				</core:IconButton>
 			</Border>
 		</StackPanel>
-	</GroupBox>
 </UserControl>

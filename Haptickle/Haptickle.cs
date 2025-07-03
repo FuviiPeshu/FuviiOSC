@@ -79,9 +79,17 @@ public class HaptickleModule : Module
             pulseToken.Cancel();
         _externalPulseTokens.Clear();
 
-        List<DeviceMapping> externalDeviceMappings = GetExternalDevices();
-        foreach (DeviceMapping mapping in externalDeviceMappings)
-            HaptickleUtils.SendOscMessage(mapping.DeviceIp, mapping.DevicePort, mapping.DeviceOscPath, 0);
+        try
+        {
+            List<DeviceMapping> externalDeviceMappings = GetExternalDevices();
+            foreach (DeviceMapping mapping in externalDeviceMappings)
+                HaptickleUtils.SendOscMessage(mapping.DeviceIp, mapping.DevicePort, mapping.DeviceOscPath, 0);
+        }
+        catch (Exception error)
+        {
+            LogDebug($"Error while stopping external devices: {error.Message}");
+        }
+
 
         return Task.CompletedTask;
     }
@@ -336,13 +344,13 @@ public class HaptickleModule : Module
         }
     }
 
-    private float GetTimeoutValue() => GetSettingValue<int>(HaptickleSetting.Timeout);
-    private List<DeviceMapping> GetExternalDevices() => GetSettingValue<List<DeviceMapping>>(HaptickleSetting.ExternalDeviceList);
+    public float GetTimeoutValue() => GetSettingValue<int>(HaptickleSetting.Timeout);
+    public List<DeviceMapping> GetExternalDevices() => GetSettingValue<List<DeviceMapping>>(HaptickleSetting.ExternalDeviceList);
 
     public enum HaptickleSetting
     {
-        HapticTriggers,
         Timeout,
+        HapticTriggers,
         ExternalDeviceList,
     }
 

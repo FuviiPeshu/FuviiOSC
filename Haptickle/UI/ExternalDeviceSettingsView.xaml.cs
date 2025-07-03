@@ -6,8 +6,8 @@ namespace FuviiOSC.Haptickle.UI;
 
 public class HaptickleModuleSetting : ListModuleSetting<DeviceMapping>
 {
-    public HaptickleModuleSetting()
-        : base("", "", typeof(ExternalDeviceSettingsView), new ObservableCollection<DeviceMapping>())
+
+    public HaptickleModuleSetting() : base("External Devices", "Configure haptic triggers for external devices", typeof(ExternalDeviceSettingsView), new ObservableCollection<DeviceMapping>())
     {
     }
 
