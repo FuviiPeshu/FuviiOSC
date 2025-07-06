@@ -212,7 +212,7 @@ public class SqueakMeterModule : Module
     {
         Dispatcher.CurrentDispatcher.Invoke(() =>
         {
-            MMDevice? device = GetAudioOutputDevices().First(d => d.ID == deviceId);
+            MMDevice? device = GetAudioOutputDevices().FirstOrDefault(d => d.ID == deviceId);
 
             try
             {
