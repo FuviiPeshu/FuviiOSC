@@ -139,11 +139,13 @@ public class HaptickleModule : Module
         {
             if (receivedParameter.Name.Equals(mapping.Parameter))
             {
+                DateTime now = DateTime.UtcNow;
                 float value = receivedParameter.GetValue<float>();
                 string key = $"{mapping.DeviceIp}:{mapping.Parameter}";
+
                 _lastTriggerValues[key] = value;
                 _lastTriggerDeltas[key] = 0.0f;
-                _lastValueTimestamps[key] = DateTime.UtcNow;
+                _lastValueTimestamps[key] = now;
 
                 switch (mapping.TriggerMode)
                 {
@@ -161,9 +163,21 @@ public class HaptickleModule : Module
                         }
                         break;
                     case HapticTriggerMode.Proximity:
-                    case HapticTriggerMode.Velocity:
                     case HapticTriggerMode.OnChange:
-                        // For these, always start/stop based on value and mode
+                        if (value > float.Epsilon && !_externalPulseTokens.ContainsKey(mapping.DeviceIp))
+                            StartExternalPatternLoop(mapping, key, mapping.TriggerMode);
+                        else if (value <= float.Epsilon)
+                        {
+                            StopExternalPatternLoop(mapping);
+                            HaptickleUtils.SendOscMessage(mapping.DeviceIp, mapping.DevicePort, mapping.DeviceOscPath, 0);
+                        }
+                        break;
+                    case HapticTriggerMode.Velocity:
+                        DateTime lastTimestamp = _lastValueTimestamps.TryGetValue(key, out DateTime t) ? t : now;
+                        float lastValue = _lastTriggerValues.TryGetValue(key, out float v) ? v : value;
+                        float timePassed = (float)Math.Max((now - lastTimestamp).TotalSeconds, 0.01f);
+                        float velocity = Math.Abs(value - lastValue) / timePassed;
+
                         if (value > float.Epsilon && !_externalPulseTokens.ContainsKey(mapping.DeviceIp))
                             StartExternalPatternLoop(mapping, key, mapping.TriggerMode);
                         else if (value <= float.Epsilon)
