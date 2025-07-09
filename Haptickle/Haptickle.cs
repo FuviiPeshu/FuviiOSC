@@ -24,7 +24,7 @@ public class HaptickleModule : Module
     private readonly Dictionary<string, DateTime> _triggerStartTimes = new();
     private readonly Dictionary<string, DateTime> _lastValueTimestamps = new();
     // Workaround: Track validity state for each trigger/parameter (bug with not keeping isValid when value conditions are met and maintained)
-    private readonly Dictionary<string, bool> _parameterValidStates = new();    
+    private readonly Dictionary<string, bool> _parameterValidStates = new();
 
     private const ushort _MIN_HAPTIC_PULSE_DURATION = 20, _MAX_HAPTIC_PULSE_DURATION = 80, _DEFAULT_PULSE_INTERVAL = 32, _TRACKER_HAPTIC_AXIS_ID = 1, _DEFAULT_DELAY = 420;
     private const float _MIN_MARGIN = 0.02f;
@@ -142,6 +142,10 @@ public class HaptickleModule : Module
                 DateTime now = DateTime.UtcNow;
                 float value = receivedParameter.GetValue<float>();
                 string key = $"{mapping.DeviceIp}:{mapping.Parameter}";
+                // If the value wasn't updated for a timeout period, assume it's invalid
+                bool wasValid = false, isValid = value > float.Epsilon;
+                if (_lastValueTimestamps.TryGetValue(key, out DateTime lastTime))
+                    wasValid = (DateTime.UtcNow - lastTime).TotalSeconds > GetTimeoutValue() ? false : true;
 
                 _lastTriggerValues[key] = value;
                 _lastTriggerDeltas[key] = 0.0f;
@@ -163,13 +167,24 @@ public class HaptickleModule : Module
                         }
                         break;
                     case HapticTriggerMode.Proximity:
-                    case HapticTriggerMode.OnChange:
                         if (value > float.Epsilon && !_externalPulseTokens.ContainsKey(mapping.DeviceIp))
                             StartExternalPatternLoop(mapping, key, mapping.TriggerMode);
                         else if (value <= float.Epsilon)
                         {
                             StopExternalPatternLoop(mapping);
                             HaptickleUtils.SendOscMessage(mapping.DeviceIp, mapping.DevicePort, mapping.DeviceOscPath, 0);
+                        }
+                        break;
+                    case HapticTriggerMode.OnChange:
+                        if (isValid != wasValid)
+                        {
+                            StartExternalPatternLoop(mapping, key, mapping.TriggerMode);
+                            Task.Run(async () =>
+                            {
+                                await Task.Delay(_DEFAULT_DELAY);
+                                StopExternalPatternLoop(mapping);
+                                HaptickleUtils.SendOscMessage(mapping.DeviceIp, mapping.DevicePort, mapping.DeviceOscPath, 0);
+                            });
                         }
                         break;
                     case HapticTriggerMode.Velocity:
@@ -270,25 +285,32 @@ public class HaptickleModule : Module
             {
                 float value = 1.0f;
                 float delta = 0.0f;
-                float phase = (float)(DateTime.UtcNow - start).TotalSeconds;
+                float phase = 0.0f;
 
                 if (key != null)
                 {
                     _lastTriggerValues.TryGetValue(key, out value);
                     _lastTriggerDeltas.TryGetValue(key, out delta);
 
+                    if (_triggerStartTimes.TryGetValue(key, out DateTime lol))
+                        phase = (float)(DateTime.UtcNow - lol).TotalSeconds;
+
                     // Timeout to prevent infinite loops (e.g. if device is disconnected)
                     if (_lastValueTimestamps.TryGetValue(key, out DateTime lastTime) && (DateTime.UtcNow - lastTime).TotalSeconds > GetTimeoutValue())
+                    {
+                        HaptickleUtils.SendOscMessage(mapping.DeviceIp, mapping.DevicePort, mapping.DeviceOscPath, 0);
+                        StopExternalPatternLoop(mapping);
                         break;
+                    }
                 }
 
                 float patterned = 0.0f;
                 switch (mode)
                 {
                     case HapticTriggerMode.Off:
-                        patterned = 0.0f;
                         break;
                     case HapticTriggerMode.Constant:
+                    case HapticTriggerMode.OnChange:
                         patterned = VibrationPattern.Apply(mapping.PatternConfig, 1.0f, 0.0f, phase);
                         break;
                     case HapticTriggerMode.Proximity:
@@ -297,20 +319,12 @@ public class HaptickleModule : Module
                     case HapticTriggerMode.Velocity:
                         patterned = VibrationPattern.Apply(mapping.PatternConfig, value, delta, phase);
                         break;
-                    case HapticTriggerMode.OnChange:
-                        // Pulse once for a short duration
-                        patterned = value > float.Epsilon ? VibrationPattern.Apply(mapping.PatternConfig, 1.0f, 0.0f, phase) : 0.0f;
-                        break;
                 }
 
                 int oscValue = (int)Math.Clamp(patterned * 255.0f, 0, 255);
                 HaptickleUtils.SendOscMessage(mapping.DeviceIp, mapping.DevicePort, mapping.DeviceOscPath, oscValue);
 
                 await Task.Delay(_DEFAULT_PULSE_INTERVAL, tokenSource.Token);
-
-                // For OnChange, stop after one pulse
-                if (mode == HapticTriggerMode.OnChange)
-                    break;
             }
 
             HaptickleUtils.SendOscMessage(mapping.DeviceIp, mapping.DevicePort, mapping.DeviceOscPath, 0);
