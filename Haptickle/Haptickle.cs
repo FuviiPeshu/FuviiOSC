@@ -27,7 +27,7 @@ public class HaptickleModule : Module
     private readonly Dictionary<string, bool> _parameterValidStates = new();
 
     private const ushort _MIN_HAPTIC_PULSE_DURATION = 20, _MAX_HAPTIC_PULSE_DURATION = 80, _DEFAULT_PULSE_INTERVAL = 32, _TRACKER_HAPTIC_AXIS_ID = 1, _DEFAULT_DELAY = 420;
-    private const float _MIN_MARGIN = 0.02f;
+    private const float _MIN_MARGIN = 0.02f, _VELOCITY_TIME_SCALAR = 0.1f;
 
     public CVRSystem? openVrSystem;
 
@@ -147,10 +147,6 @@ public class HaptickleModule : Module
                 if (_lastValueTimestamps.TryGetValue(key, out DateTime lastTime))
                     wasValid = (DateTime.UtcNow - lastTime).TotalSeconds > GetTimeoutValue() ? false : true;
 
-                _lastTriggerValues[key] = value;
-                _lastTriggerDeltas[key] = 0.0f;
-                _lastValueTimestamps[key] = now;
-
                 switch (mapping.TriggerMode)
                 {
                     case HapticTriggerMode.Off:
@@ -188,20 +184,28 @@ public class HaptickleModule : Module
                         }
                         break;
                     case HapticTriggerMode.Velocity:
-                        DateTime lastTimestamp = _lastValueTimestamps.TryGetValue(key, out DateTime t) ? t : now;
+                        DateTime lastTimestamp = lastTime != null ? lastTime : now;
                         float lastValue = _lastTriggerValues.TryGetValue(key, out float v) ? v : value;
-                        float timePassed = (float)Math.Max((now - lastTimestamp).TotalSeconds, 0.01f);
-                        float velocity = Math.Abs(value - lastValue) / timePassed;
+                        float deltaTime = (float)Math.Max((now - lastTimestamp).TotalSeconds, _VELOCITY_TIME_SCALAR);
+                        float speed = mapping.PatternConfig?.Speed ?? 1.0f;
+                        float velocity = Math.Clamp(Math.Abs(value - lastValue) / (deltaTime / speed), 0.0f, 1.0f);
+                        bool hasMovedSignificantly = velocity > _MIN_MARGIN;
 
-                        if (value > float.Epsilon && !_externalPulseTokens.ContainsKey(mapping.DeviceIp))
+                        _lastTriggerDeltas[key] = velocity;
+                        _triggerStartTimes[key] = now;
+
+                        if (isValid && hasMovedSignificantly && !_externalPulseTokens.ContainsKey(mapping.DeviceIp))
                             StartExternalPatternLoop(mapping, key, mapping.TriggerMode);
-                        else if (value <= float.Epsilon)
+                        else if (!hasMovedSignificantly)
                         {
                             StopExternalPatternLoop(mapping);
                             HaptickleUtils.SendOscMessage(mapping.DeviceIp, mapping.DevicePort, mapping.DeviceOscPath, 0);
                         }
                         break;
                 }
+
+                _lastTriggerValues[key] = value;
+                _lastValueTimestamps[key] = now;
             }
         }
     }
@@ -317,7 +321,7 @@ public class HaptickleModule : Module
                         patterned = VibrationPattern.Apply(mapping.PatternConfig, value, 0.0f, phase);
                         break;
                     case HapticTriggerMode.Velocity:
-                        patterned = VibrationPattern.Apply(mapping.PatternConfig, value, delta, phase);
+                        patterned = VibrationPattern.Apply(mapping.PatternConfig, delta, 0.0f, phase);
                         break;
                 }
 
@@ -372,13 +376,14 @@ public class HaptickleModule : Module
         float lastValue = _lastFloatValues.TryGetValue(key, out float v) ? v : value;
         DateTime now = DateTime.UtcNow;
         DateTime lastTimestamp = _lastValueTimestamps.TryGetValue(key, out DateTime t) ? t : now;
-        float timePassed = (float)Math.Max((now - lastTimestamp).TotalSeconds, 0.01f);
-        float velocity = Math.Abs(value - lastValue) / timePassed;
+        float deltaTime = (float)Math.Max((now - lastTimestamp).TotalSeconds, _VELOCITY_TIME_SCALAR);
+        float speed = trigger.PatternConfig?.Speed ?? 1.0f;
+        float velocity = Math.Clamp(Math.Abs(value - lastValue) / (deltaTime / speed), 0.0f, 1.0f);
         bool hasMovedSignificantly = velocity > _MIN_MARGIN;
 
         _lastFloatValues[key] = value;
         _lastValueTimestamps[key] = now;
-        _lastTriggerValues[key] = value;
+        _lastTriggerValues[key] = velocity;
         _lastTriggerDeltas[key] = velocity;
         _triggerStartTimes.TryAdd(key, DateTime.UtcNow);
 
