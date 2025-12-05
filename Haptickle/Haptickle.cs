@@ -94,7 +94,7 @@ public class HaptickleModule : Module
         return Task.CompletedTask;
     }
 
-    protected override void OnAnyParameterReceived(ReceivedParameter receivedParameter)
+    protected override void OnAnyParameterReceived(VRChatParameter receivedParameter)
     {
         if (openVrSystem == null || receivedParameter == null) return;
 
@@ -357,7 +357,7 @@ public class HaptickleModule : Module
             StopPulseLoop(trigger);
     }
 
-    private void HandleProximity(HapticTrigger trigger, string key, bool isValid, bool wasValid, ReceivedParameter receivedParameter)
+    private void HandleProximity(HapticTrigger trigger, string key, bool isValid, bool wasValid, VRChatParameter receivedParameter)
     {
         float proximityValue = receivedParameter.GetValue<float>();
         _lastTriggerValues[key] = proximityValue;
@@ -370,7 +370,7 @@ public class HaptickleModule : Module
             StopPulseLoop(trigger);
     }
 
-    private void HandleVelocity(HapticTrigger trigger, string key, bool isValid, bool wasValid, ReceivedParameter receivedParameter)
+    private void HandleVelocity(HapticTrigger trigger, string key, bool isValid, bool wasValid, VRChatParameter receivedParameter)
     {
         float value = receivedParameter.GetValue<float>();
         float lastValue = _lastFloatValues.TryGetValue(key, out float v) ? v : value;

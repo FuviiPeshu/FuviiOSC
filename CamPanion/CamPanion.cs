@@ -1,155 +1,201 @@
-using System.Threading.Tasks;
-using VRCOSC.App.SDK.Modules;
-using VRCOSC.App.SDK.Parameters;
+//using System;
+//using System.Collections.Generic;
+//using System.Threading.Tasks;
+//using VRCOSC.App.SDK.Modules;
+//using VRCOSC.App.SDK.Parameters;
 
-namespace FuviiOSC.CamPanion;
+//namespace FuviiOSC.CamPanion;
 
-[ModuleTitle("CamPanion")]
-[ModuleDescription("Control VRChat camera via OSC.")]
-[ModuleType(ModuleType.Generic)]
-public class CamPanionModule : Module
-{
-    private const string CameraModePath = "/usercamera/Mode";
-    private const string CameraPosePath = "/usercamera/Pose";
-    private const string CameraClosePath = "/usercamera/Close";
-    private const string CameraCapturePath = "/usercamera/Capture";
-    private const string CameraCaptureDelayedPath = "/usercamera/CaptureDelayed";
-    private const string ShowUIInCameraPath = "/usercamera/ShowUIInCamera";
-    private const string LockPath = "/usercamera/Lock";
-    private const string LocalPlayerPath = "/usercamera/LocalPlayer";
-    private const string RemotePlayerPath = "/usercamera/RemotePlayer";
-    private const string EnvironmentPath = "/usercamera/Environment";
-    private const string GreenScreenPath = "/usercamera/GreenScreen";
-    private const string SmoothMovementPath = "/usercamera/SmoothMovement";
-    private const string LookAtMePath = "/usercamera/LookAtMe";
-    private const string AutoLevelRollPath = "/usercamera/AutoLevelRoll";
-    private const string AutoLevelPitchPath = "/usercamera/AutoLevelPitch";
-    private const string FlyingPath = "/usercamera/Flying";
-    private const string TriggerTakesPhotosPath = "/usercamera/TriggerTakesPhotos";
-    private const string DollyPathsStayVisiblePath = "/usercamera/DollyPathsStayVisible";
-    private const string CameraEarsPath = "/usercamera/CameraEars";
-    private const string ShowFocusPath = "/usercamera/ShowFocus";
-    private const string StreamingPath = "/usercamera/Streaming";
-    private const string RollWhileFlyingPath = "/usercamera/RollWhileFlying";
-    private const string OrientationIsLandscapePath = "/usercamera/OrientationIsLandscape";
-    private const string ZoomPath = "/usercamera/Zoom";
-    private const string ExposurePath = "/usercamera/Exposure";
-    private const string FocalDistancePath = "/usercamera/FocalDistance";
-    private const string AperturePath = "/usercamera/Aperture";
-    private const string HuePath = "/usercamera/Hue";
-    private const string SaturationPath = "/usercamera/Saturation";
-    private const string LightnessPath = "/usercamera/Lightness";
-    private const string LookAtMeXOffsetPath = "/usercamera/LookAtMeXOffset";
-    private const string LookAtMeYOffsetPath = "/usercamera/LookAtMeYOffset";
-    private const string FlySpeedPath = "/usercamera/FlySpeed";
-    private const string TurnSpeedPath = "/usercamera/TurnSpeed";
-    private const string SmoothingStrengthPath = "/usercamera/SmoothingStrength";
-    private const string PhotoRatePath = "/usercamera/PhotoRate";
-    private const string DurationPath = "/usercamera/Duration";
+//[ModuleTitle("CamPanion")]
+//[ModuleDescription("Control VRChat camera via OSC.")]
+//[ModuleType(ModuleType.Generic)]
+//public class CamPanionModule : Module
+//{
+//    // Map parameter enum to VRChat OSC endpoint
+//    private static readonly Dictionary<CamPanionParameter, string> VrcOscEndpoints = new()
+//    {
+//        { CamPanionParameter.CameraMode, "/usercamera/Mode" },
+//        { CamPanionParameter.CameraClose, "/usercamera/Close" },
+//        { CamPanionParameter.CameraCapture, "/usercamera/Capture" },
+//        { CamPanionParameter.CameraCaptureDelayed, "/usercamera/CaptureDelayed" },
+//        { CamPanionParameter.ShowUIInCamera, "/usercamera/ShowUIInCamera" },
+//        { CamPanionParameter.Lock, "/usercamera/Lock" },
+//        { CamPanionParameter.LocalPlayer, "/usercamera/LocalPlayer" },
+//        { CamPanionParameter.RemotePlayer, "/usercamera/RemotePlayer" },
+//        { CamPanionParameter.Environment, "/usercamera/Environment" },
+//        { CamPanionParameter.GreenScreen, "/usercamera/GreenScreen" },
+//        { CamPanionParameter.SmoothMovement, "/usercamera/SmoothMovement" },
+//        { CamPanionParameter.LookAtMe, "/usercamera/LookAtMe" },
+//        { CamPanionParameter.AutoLevelRoll, "/usercamera/AutoLevelRoll" },
+//        { CamPanionParameter.AutoLevelPitch, "/usercamera/AutoLevelPitch" },
+//        { CamPanionParameter.Flying, "/usercamera/Flying" },
+//        { CamPanionParameter.TriggerTakesPhotos, "/usercamera/TriggerTakesPhotos" },
+//        { CamPanionParameter.DollyPathsStayVisible, "/usercamera/DollyPathsStayVisible" },
+//        { CamPanionParameter.CameraEars, "/usercamera/CameraEars" },
+//        { CamPanionParameter.ShowFocus, "/usercamera/ShowFocus" },
+//        { CamPanionParameter.Streaming, "/usercamera/Streaming" },
+//        { CamPanionParameter.RollWhileFlying, "/usercamera/RollWhileFlying" },
+//        { CamPanionParameter.OrientationIsLandscape, "/usercamera/OrientationIsLandscape" },
+//        { CamPanionParameter.Zoom, "/usercamera/Zoom" },
+//        { CamPanionParameter.Exposure, "/usercamera/Exposure" },
+//        { CamPanionParameter.FocalDistance, "/usercamera/FocalDistance" },
+//        { CamPanionParameter.Aperture, "/usercamera/Aperture" },
+//        { CamPanionParameter.Hue, "/usercamera/Hue" },
+//        { CamPanionParameter.Saturation, "/usercamera/Saturation" },
+//        { CamPanionParameter.Lightness, "/usercamera/Lightness" },
+//        { CamPanionParameter.LookAtMeXOffset, "/usercamera/LookAtMeXOffset" },
+//        { CamPanionParameter.LookAtMeYOffset, "/usercamera/LookAtMeYOffset" },
+//        { CamPanionParameter.FlySpeed, "/usercamera/FlySpeed" },
+//        { CamPanionParameter.TurnSpeed, "/usercamera/TurnSpeed" },
+//        { CamPanionParameter.SmoothingStrength, "/usercamera/SmoothingStrength" },
+//        { CamPanionParameter.PhotoRate, "/usercamera/PhotoRate" },
+//        { CamPanionParameter.Duration, "/usercamera/Duration" }
+//    };
 
-    [ModulePersistent("cameraTriggerPath")]
-    public string CameraTriggerPath { get; set; } = "campanion/Trigger";
+//    // Map registered parameter names to CamPanionParameter
+//    private Dictionary<string, CamPanionParameter> _nameToParameter = new();
 
-    protected override void OnPreLoad()
-    {
-        CreateTextBox(CamPanionSetting.CameraTriggerPath, "Camera Trigger Path", "OSC path to trigger camera spawn", CameraTriggerPath);
-    }
+//    protected override void OnPreLoad()
+//    {
+//        // No settings needed
+//    }
 
-    protected override Task<bool> OnModuleStart()
-    {
-        // Register official endpoints
-        RegisterParameter<int>(CamPanionParameter.CameraMode, CameraModePath, ParameterMode.ReadWrite, "Camera Mode", "Set/Get camera mode");
-        RegisterParameter<bool>(CamPanionParameter.CameraClose, CameraClosePath, ParameterMode.Write, "Camera Close", "Close camera");
-        RegisterParameter<bool>(CamPanionParameter.CameraCapture, CameraCapturePath, ParameterMode.Write, "Camera Capture", "Take photo");
-        RegisterParameter<bool>(CamPanionParameter.CameraCaptureDelayed, CameraCaptureDelayedPath, ParameterMode.Write, "Camera Capture Delayed", "Take timed photo");
-        RegisterParameter<bool>(CamPanionParameter.ShowUIInCamera, ShowUIInCameraPath, ParameterMode.ReadWrite, "Show UI In Camera", "Toggle UI mask");
-        RegisterParameter<bool>(CamPanionParameter.Lock, LockPath, ParameterMode.ReadWrite, "Lock", "Toggle lock");
-        RegisterParameter<bool>(CamPanionParameter.LocalPlayer, LocalPlayerPath, ParameterMode.ReadWrite, "Local Player", "Toggle Local Player mask");
-        RegisterParameter<bool>(CamPanionParameter.RemotePlayer, RemotePlayerPath, ParameterMode.ReadWrite, "Remote Player", "Toggle Remote Players mask");
-        RegisterParameter<bool>(CamPanionParameter.Environment, EnvironmentPath, ParameterMode.ReadWrite, "Environment", "Toggle Environment mask");
-        RegisterParameter<bool>(CamPanionParameter.GreenScreen, GreenScreenPath, ParameterMode.ReadWrite, "Green Screen", "Toggle greenscreen");
-        RegisterParameter<bool>(CamPanionParameter.SmoothMovement, SmoothMovementPath, ParameterMode.ReadWrite, "Smooth Movement", "Toggle Smoothed behavior");
-        RegisterParameter<bool>(CamPanionParameter.LookAtMe, LookAtMePath, ParameterMode.ReadWrite, "Look At Me", "Toggle Look-At-Me behaviour");
-        RegisterParameter<bool>(CamPanionParameter.AutoLevelRoll, AutoLevelRollPath, ParameterMode.ReadWrite, "Auto Level Roll", "Toggle auto-level roll behavior");
-        RegisterParameter<bool>(CamPanionParameter.AutoLevelPitch, AutoLevelPitchPath, ParameterMode.ReadWrite, "Auto Level Pitch", "Toggle auto-level pitch behavior");
-        RegisterParameter<bool>(CamPanionParameter.Flying, FlyingPath, ParameterMode.ReadWrite, "Flying", "Toggle Flying");
-        RegisterParameter<bool>(CamPanionParameter.TriggerTakesPhotos, TriggerTakesPhotosPath, ParameterMode.ReadWrite, "Trigger Takes Photos", "Toggle Trigger takes photos");
-        RegisterParameter<bool>(CamPanionParameter.DollyPathsStayVisible, DollyPathsStayVisiblePath, ParameterMode.ReadWrite, "Dolly Paths Stay Visible", "Toggle dolly path stays visible while animating");
-        RegisterParameter<bool>(CamPanionParameter.CameraEars, CameraEarsPath, ParameterMode.ReadWrite, "Camera Ears", "Toggle audio from camera");
-        RegisterParameter<bool>(CamPanionParameter.ShowFocus, ShowFocusPath, ParameterMode.ReadWrite, "Show Focus", "Toggle focus overlay");
-        RegisterParameter<bool>(CamPanionParameter.Streaming, StreamingPath, ParameterMode.ReadWrite, "Streaming", "Toggle spout stream");
-        RegisterParameter<bool>(CamPanionParameter.RollWhileFlying, RollWhileFlyingPath, ParameterMode.ReadWrite, "Roll While Flying", "Toggle roll while flying behavior");
-        RegisterParameter<bool>(CamPanionParameter.OrientationIsLandscape, OrientationIsLandscapePath, ParameterMode.ReadWrite, "Orientation Is Landscape", "Toggle orientation");
-        RegisterParameter<float>(CamPanionParameter.Zoom, ZoomPath, ParameterMode.ReadWrite, "Zoom", "Set/Get zoom slider");
-        RegisterParameter<float>(CamPanionParameter.Exposure, ExposurePath, ParameterMode.ReadWrite, "Exposure", "Set/Get exposure slider");
-        RegisterParameter<float>(CamPanionParameter.FocalDistance, FocalDistancePath, ParameterMode.ReadWrite, "Focal Distance", "Set/Get focal distance slider");
-        RegisterParameter<float>(CamPanionParameter.Aperture, AperturePath, ParameterMode.ReadWrite, "Aperture", "Set/Get aperture slider");
-        RegisterParameter<float>(CamPanionParameter.Hue, HuePath, ParameterMode.ReadWrite, "Hue", "Set/Get greenscreen hue slider");
-        RegisterParameter<float>(CamPanionParameter.Saturation, SaturationPath, ParameterMode.ReadWrite, "Saturation", "Set/Get greenscreen saturation slider");
-        RegisterParameter<float>(CamPanionParameter.Lightness, LightnessPath, ParameterMode.ReadWrite, "Lightness", "Set/Get greenscreen lightness slider");
-        RegisterParameter<float>(CamPanionParameter.LookAtMeXOffset, LookAtMeXOffsetPath, ParameterMode.ReadWrite, "Look At Me X Offset", "Set/Get LAM X offset slider");
-        RegisterParameter<float>(CamPanionParameter.LookAtMeYOffset, LookAtMeYOffsetPath, ParameterMode.ReadWrite, "Look At Me Y Offset", "Set/Get LAM Y offset slider");
-        RegisterParameter<float>(CamPanionParameter.FlySpeed, FlySpeedPath, ParameterMode.ReadWrite, "Fly Speed", "Set/Get fly speed slider");
-        RegisterParameter<float>(CamPanionParameter.TurnSpeed, TurnSpeedPath, ParameterMode.ReadWrite, "Turn Speed", "Set/Get turn speed slider");
-        RegisterParameter<float>(CamPanionParameter.SmoothingStrength, SmoothingStrengthPath, ParameterMode.ReadWrite, "Smoothing Strength", "Set/Get smoothing strength slider");
-        RegisterParameter<float>(CamPanionParameter.PhotoRate, PhotoRatePath, ParameterMode.ReadWrite, "Photo Rate", "Set/Get dolly photo capture rate slider");
-        RegisterParameter<float>(CamPanionParameter.Duration, DurationPath, ParameterMode.ReadWrite, "Duration", "Set/Get dolly duration slider");
-        // Register user-customizable trigger
-        RegisterParameter<bool>(CamPanionParameter.CameraTrigger, CameraTriggerPath, ParameterMode.Read, "Camera Trigger", "Trigger camera spawn");
-        return Task.FromResult(true);
-    }
+//    protected override Task<bool> OnModuleStart()
+//    {
+//        // Register all parameters to listen for and build name-to-enum map
+//        RegisterParameter<int>(CamPanionParameter.CameraMode, "VRCOSC/CamPanion/Mode", ParameterMode.Read, "Camera Mode", "Set camera mode");
+//        _nameToParameter["VRCOSC/CamPanion/Mode"] = CamPanionParameter.CameraMode;
+//        RegisterParameter<bool>(CamPanionParameter.CameraClose, "VRCOSC/CamPanion/Close", ParameterMode.Read, "Camera Close", "Close camera");
+//        _nameToParameter["VRCOSC/CamPanion/Close"] = CamPanionParameter.CameraClose;
+//        RegisterParameter<bool>(CamPanionParameter.CameraCapture, "VRCOSC/CamPanion/Capture", ParameterMode.Read, "Camera Capture", "Take photo");
+//        _nameToParameter["VRCOSC/CamPanion/Capture"] = CamPanionParameter.CameraCapture;
+//        RegisterParameter<bool>(CamPanionParameter.CameraCaptureDelayed, "VRCOSC/CamPanion/CaptureDelayed", ParameterMode.Read, "Camera Capture Delayed", "Take timed photo");
+//        _nameToParameter["VRCOSC/CamPanion/CaptureDelayed"] = CamPanionParameter.CameraCaptureDelayed;
+//        RegisterParameter<bool>(CamPanionParameter.ShowUIInCamera, "VRCOSC/CamPanion/ShowUIInCamera", ParameterMode.Read, "Show UI In Camera", "Toggle UI mask");
+//        _nameToParameter["VRCOSC/CamPanion/ShowUIInCamera"] = CamPanionParameter.ShowUIInCamera;
+//        RegisterParameter<bool>(CamPanionParameter.Lock, "VRCOSC/CamPanion/Lock", ParameterMode.Read, "Lock", "Toggle lock");
+//        _nameToParameter["VRCOSC/CamPanion/Lock"] = CamPanionParameter.Lock;
+//        RegisterParameter<bool>(CamPanionParameter.LocalPlayer, "VRCOSC/CamPanion/LocalPlayer", ParameterMode.Read, "Local Player", "Toggle Local Player mask");
+//        _nameToParameter["VRCOSC/CamPanion/LocalPlayer"] = CamPanionParameter.LocalPlayer;
+//        RegisterParameter<bool>(CamPanionParameter.RemotePlayer, "VRCOSC/CamPanion/RemotePlayer", ParameterMode.Read, "Remote Player", "Toggle Remote Players mask");
+//        _nameToParameter["VRCOSC/CamPanion/RemotePlayer"] = CamPanionParameter.RemotePlayer;
+//        RegisterParameter<bool>(CamPanionParameter.Environment, "VRCOSC/CamPanion/Environment", ParameterMode.Read, "Environment", "Toggle Environment mask");
+//        _nameToParameter["VRCOSC/CamPanion/Environment"] = CamPanionParameter.Environment;
+//        RegisterParameter<bool>(CamPanionParameter.GreenScreen, "VRCOSC/CamPanion/GreenScreen", ParameterMode.Read, "Green Screen", "Toggle greenscreen");
+//        _nameToParameter["VRCOSC/CamPanion/GreenScreen"] = CamPanionParameter.GreenScreen;
+//        RegisterParameter<bool>(CamPanionParameter.SmoothMovement, "VRCOSC/CamPanion/SmoothMovement", ParameterMode.Read, "Smooth Movement", "Toggle Smoothed behavior");
+//        _nameToParameter["VRCOSC/CamPanion/SmoothMovement"] = CamPanionParameter.SmoothMovement;
+//        RegisterParameter<bool>(CamPanionParameter.LookAtMe, "VRCOSC/CamPanion/LookAtMe", ParameterMode.Read, "Look At Me", "Toggle Look-At-Me behaviour");
+//        _nameToParameter["VRCOSC/CamPanion/LookAtMe"] = CamPanionParameter.LookAtMe;
+//        RegisterParameter<bool>(CamPanionParameter.AutoLevelRoll, "VRCOSC/CamPanion/AutoLevelRoll", ParameterMode.Read, "Auto Level Roll", "Toggle auto-level roll behavior");
+//        _nameToParameter["VRCOSC/CamPanion/AutoLevelRoll"] = CamPanionParameter.AutoLevelRoll;
+//        RegisterParameter<bool>(CamPanionParameter.AutoLevelPitch, "VRCOSC/CamPanion/AutoLevelPitch", ParameterMode.Read, "Auto Level Pitch", "Toggle auto-level pitch behavior");
+//        _nameToParameter["VRCOSC/CamPanion/AutoLevelPitch"] = CamPanionParameter.AutoLevelPitch;
+//        RegisterParameter<bool>(CamPanionParameter.Flying, "VRCOSC/CamPanion/Flying", ParameterMode.Read, "Flying", "Toggle Flying");
+//        _nameToParameter["VRCOSC/CamPanion/Flying"] = CamPanionParameter.Flying;
+//        RegisterParameter<bool>(CamPanionParameter.TriggerTakesPhotos, "VRCOSC/CamPanion/TriggerTakesPhotos", ParameterMode.Read, "Trigger Takes Photos", "Toggle Trigger takes photos");
+//        _nameToParameter["VRCOSC/CamPanion/TriggerTakesPhotos"] = CamPanionParameter.TriggerTakesPhotos;
+//        RegisterParameter<bool>(CamPanionParameter.DollyPathsStayVisible, "VRCOSC/CamPanion/DollyPathsStayVisible", ParameterMode.Read, "Dolly Paths Stay Visible", "Toggle dolly path stays visible while animating");
+//        _nameToParameter["VRCOSC/CamPanion/DollyPathsStayVisible"] = CamPanionParameter.DollyPathsStayVisible;
+//        RegisterParameter<bool>(CamPanionParameter.CameraEars, "VRCOSC/CamPanion/CameraEars", ParameterMode.Read, "Camera Ears", "Toggle audio from camera");
+//        _nameToParameter["VRCOSC/CamPanion/CameraEars"] = CamPanionParameter.CameraEars;
+//        RegisterParameter<bool>(CamPanionParameter.ShowFocus, "VRCOSC/CamPanion/ShowFocus", ParameterMode.Read, "Show Focus", "Toggle focus overlay");
+//        _nameToParameter["VRCOSC/CamPanion/ShowFocus"] = CamPanionParameter.ShowFocus;
+//        RegisterParameter<bool>(CamPanionParameter.Streaming, "VRCOSC/CamPanion/Streaming", ParameterMode.Read, "Streaming", "Toggle spout stream");
+//        _nameToParameter["VRCOSC/CamPanion/Streaming"] = CamPanionParameter.Streaming;
+//        RegisterParameter<bool>(CamPanionParameter.RollWhileFlying, "VRCOSC/CamPanion/RollWhileFlying", ParameterMode.Read, "Roll While Flying", "Toggle roll while flying behavior");
+//        _nameToParameter["VRCOSC/CamPanion/RollWhileFlying"] = CamPanionParameter.RollWhileFlying;
+//        RegisterParameter<bool>(CamPanionParameter.OrientationIsLandscape, "VRCOSC/CamPanion/OrientationIsLandscape", ParameterMode.Read, "Orientation Is Landscape", "Toggle orientation");
+//        _nameToParameter["VRCOSC/CamPanion/OrientationIsLandscape"] = CamPanionParameter.OrientationIsLandscape;
+//        RegisterParameter<float>(CamPanionParameter.Zoom, "VRCOSC/CamPanion/Zoom", ParameterMode.Read, "Zoom", "Set/Get zoom slider");
+//        _nameToParameter["VRCOSC/CamPanion/Zoom"] = CamPanionParameter.Zoom;
+//        RegisterParameter<float>(CamPanionParameter.Exposure, "VRCOSC/CamPanion/Exposure", ParameterMode.Read, "Exposure", "Set/Get exposure slider");
+//        _nameToParameter["VRCOSC/CamPanion/Exposure"] = CamPanionParameter.Exposure;
+//        RegisterParameter<float>(CamPanionParameter.FocalDistance, "VRCOSC/CamPanion/FocalDistance", ParameterMode.Read, "Focal Distance", "Set/Get focal distance slider");
+//        _nameToParameter["VRCOSC/CamPanion/FocalDistance"] = CamPanionParameter.FocalDistance;
+//        RegisterParameter<float>(CamPanionParameter.Aperture, "VRCOSC/CamPanion/Aperture", ParameterMode.Read, "Aperture", "Set/Get aperture slider");
+//        _nameToParameter["VRCOSC/CamPanion/Aperture"] = CamPanionParameter.Aperture;
+//        RegisterParameter<float>(CamPanionParameter.Hue, "VRCOSC/CamPanion/Hue", ParameterMode.Read, "Hue", "Set/Get greenscreen hue slider");
+//        _nameToParameter["VRCOSC/CamPanion/Hue"] = CamPanionParameter.Hue;
+//        RegisterParameter<float>(CamPanionParameter.Saturation, "VRCOSC/CamPanion/Saturation", ParameterMode.Read, "Saturation", "Set/Get greenscreen saturation slider");
+//        _nameToParameter["VRCOSC/CamPanion/Saturation"] = CamPanionParameter.Saturation;
+//        RegisterParameter<float>(CamPanionParameter.Lightness, "VRCOSC/CamPanion/Lightness", ParameterMode.Read, "Lightness", "Set/Get greenscreen lightness slider");
+//        _nameToParameter["VRCOSC/CamPanion/Lightness"] = CamPanionParameter.Lightness;
+//        RegisterParameter<float>(CamPanionParameter.LookAtMeXOffset, "VRCOSC/CamPanion/LookAtMeXOffset", ParameterMode.Read, "Look At Me X Offset", "Set/Get LAM X offset slider");
+//        _nameToParameter["VRCOSC/CamPanion/LookAtMeXOffset"] = CamPanionParameter.LookAtMeXOffset;
+//        RegisterParameter<float>(CamPanionParameter.LookAtMeYOffset, "VRCOSC/CamPanion/LookAtMeYOffset", ParameterMode.Read, "Look At Me Y Offset", "Set/Get LAM Y offset slider");
+//        _nameToParameter["VRCOSC/CamPanion/LookAtMeYOffset"] = CamPanionParameter.LookAtMeYOffset;
+//        RegisterParameter<float>(CamPanionParameter.FlySpeed, "VRCOSC/CamPanion/FlySpeed", ParameterMode.Read, "Fly Speed", "Set/Get fly speed slider");
+//        _nameToParameter["VRCOSC/CamPanion/FlySpeed"] = CamPanionParameter.FlySpeed;
+//        RegisterParameter<float>(CamPanionParameter.TurnSpeed, "VRCOSC/CamPanion/TurnSpeed", ParameterMode.Read, "Turn Speed", "Set/Get turn speed slider");
+//        _nameToParameter["VRCOSC/CamPanion/TurnSpeed"] = CamPanionParameter.TurnSpeed;
+//        RegisterParameter<float>(CamPanionParameter.SmoothingStrength, "VRCOSC/CamPanion/SmoothingStrength", ParameterMode.Read, "Smoothing Strength", "Set/Get smoothing strength slider");
+//        _nameToParameter["VRCOSC/CamPanion/SmoothingStrength"] = CamPanionParameter.SmoothingStrength;
+//        RegisterParameter<float>(CamPanionParameter.PhotoRate, "VRCOSC/CamPanion/PhotoRate", ParameterMode.Read, "Photo Rate", "Set/Get dolly photo capture rate slider");
+//        _nameToParameter["VRCOSC/CamPanion/PhotoRate"] = CamPanionParameter.PhotoRate;
+//        RegisterParameter<float>(CamPanionParameter.Duration, "VRCOSC/CamPanion/Duration", ParameterMode.Read, "Duration", "Set/Get dolly duration slider");
+//        _nameToParameter["VRCOSC/CamPanion/Duration"] = CamPanionParameter.Duration;
 
-    protected override void OnAnyParameterReceived(ReceivedParameter receivedParameter)
-    {
-        if (receivedParameter.Name == CameraTriggerPath && receivedParameter.GetValue<bool>())
-        {
-            SendParameterAndWait(CamPanionParameter.CameraMode, 1); // Example: set mode to Photo
-        }
-    }
+//        return Task.FromResult(true);
+//    }
 
-    public enum CamPanionSetting
-    {
-        CameraTriggerPath = 0
-    }
+//    protected override void OnAnyParameterReceived(VRChatParameter receivedParameter)
+//    {
+//        // Lookup the parameter by its actual registered name
+//        if (_nameToParameter.TryGetValue(receivedParameter.Name, out var param) && VrcOscEndpoints.TryGetValue(receivedParameter.Name, out var endpoint))
+//        {
+//            switch (receivedParameter.Type)
+//            {
+//                case ParameterType.Bool:
+//                    SendParameterAndWait(param, receivedParameter.GetValue<bool>());
+//                    break;
+//                case ParameterType.Int:
+//                    SendParameterAndWait(param, receivedParameter.GetValue<int>());
+//                    break;
+//                case ParameterType.Float:
+//                    SendParameterAndWait(param, receivedParameter.GetValue<float>());
+//                    break;
+//            }
+//        }
+//    }
 
-    public enum CamPanionParameter
-    {
-        CameraMode = 0,
-        CameraClose = 1,
-        CameraCapture = 2,
-        CameraCaptureDelayed = 3,
-        ShowUIInCamera = 4,
-        Lock = 5,
-        LocalPlayer = 6,
-        RemotePlayer = 7,
-        Environment = 8,
-        GreenScreen = 9,
-        SmoothMovement = 10,
-        LookAtMe = 11,
-        AutoLevelRoll = 12,
-        AutoLevelPitch = 13,
-        Flying = 14,
-        TriggerTakesPhotos = 15,
-        DollyPathsStayVisible = 16,
-        CameraEars = 17,
-        ShowFocus = 18,
-        Streaming = 19,
-        RollWhileFlying = 20,
-        OrientationIsLandscape = 21,
-        Zoom = 22,
-        Exposure = 23,
-        FocalDistance = 24,
-        Aperture = 25,
-        Hue = 26,
-        Saturation = 27,
-        Lightness = 28,
-        LookAtMeXOffset = 29,
-        LookAtMeYOffset = 30,
-        FlySpeed = 31,
-        TurnSpeed = 32,
-        SmoothingStrength = 33,
-        PhotoRate = 34,
-        Duration = 35,
-        CameraTrigger = 36
-    }
-}
+//    public enum CamPanionParameter
+//    {
+//        CameraMode,
+//        CameraClose,
+//        CameraCapture,
+//        CameraCaptureDelayed,
+//        ShowUIInCamera,
+//        Lock,
+//        LocalPlayer,
+//        RemotePlayer,
+//        Environment,
+//        GreenScreen,
+//        SmoothMovement,
+//        LookAtMe,
+//        AutoLevelRoll,
+//        AutoLevelPitch,
+//        Flying,
+//        TriggerTakesPhotos,
+//        DollyPathsStayVisible,
+//        CameraEars,
+//        ShowFocus,
+//        Streaming,
+//        RollWhileFlying,
+//        OrientationIsLandscape,
+//        Zoom,
+//        Exposure,
+//        FocalDistance,
+//        Aperture,
+//        Hue,
+//        Saturation,
+//        Lightness,
+//        LookAtMeXOffset,
+//        LookAtMeYOffset,
+//        FlySpeed,
+//        TurnSpeed,
+//        SmoothingStrength,
+//        PhotoRate,
+//        Duration
+//    }
+//}

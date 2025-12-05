@@ -4,7 +4,6 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
-    xmlns:core="clr-namespace:VRCOSC.App.UI.Core;assembly=VRCOSC.App"
     mc:Ignorable="d"
     xmlns:common="clr-namespace:FuviiOSC.Common">
     <UserControl.Resources>
@@ -18,7 +17,6 @@
             SelectedValue="{Binding SelectedDeviceId.Value, Mode=TwoWay}"
             DisplayMemberPath="FriendlyName"
             SelectedValuePath="ID"
-            LostMouseCapture="DeviceSelection_OnLostMouseCapture"
             SelectionChanged="DeviceSelection_OnSelectionChanged"
             Background="{StaticResource CBackground3}"
             FontSize="16"
@@ -68,7 +66,7 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="{Binding FriendlyName}" Grid.Column="0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" FontSize="16" FontWeight="Regular" HorizontalAlignment="Stretch" VerticalAlignment="Center" TextAlignment="Left" />
-                                <core:IconButton Tag="{Binding}" Click="RemoveDisabledDevice"  Grid.Column="1" ButtonColour="Red" Icon="Solid_Minus" Width="25" Height="25" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                <Button Tag="{Binding}" Click="RemoveDisabledDevice" Content="-" Grid.Column="1" Background="#FFD32F2F" Foreground="White" Width="25" Height="25" HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="Bold" />
                             </Grid>
                         </Border>
                     </DataTemplate>

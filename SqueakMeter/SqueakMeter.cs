@@ -210,45 +210,42 @@ public class SqueakMeterModule : Module
 
     public void SetCaptureDevice(string? deviceId)
     {
-        Dispatcher.CurrentDispatcher.Invoke(() =>
+        MMDevice? device = GetAudioOutputDevices().FirstOrDefault(d => d.ID == deviceId);
+
+        try
         {
-            MMDevice? device = GetAudioOutputDevices().FirstOrDefault(d => d.ID == deviceId);
+            if (device == null)
+                throw new ArgumentNullException(nameof(device));
 
-            try
+            // Clean up previous capture and device
+            if (capture != null)
             {
-                if (device == null)
-                    throw new ArgumentNullException(nameof(device));
-
-                // Clean up previous capture and device
-                if (capture != null)
-                {
-                    capture.DataAvailable -= OnDataAvailable;
-                    capture.StopRecording();
-                    capture.Dispose();
-                    capture = null;
-                }
-
-                activeDevice?.Dispose();
-                activeDevice = device;
-
-                if (activeDevice.AudioEndpointVolume.HardwareSupport == 0)
-                    throw new NotSupportedException($"Selected device '{activeDevice.FriendlyName}' does not support capturing.");
-
-                capture = new WasapiLoopbackCapture(activeDevice);
-                capture.DataAvailable += OnDataAvailable;
-                capture.WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
-                bytesPerSample = capture.WaveFormat.BitsPerSample / capture.WaveFormat.BlockAlign;
-                capture.StartRecording();
-                enabled = true;
+                capture.DataAvailable -= OnDataAvailable;
+                capture.StopRecording();
+                capture.Dispose();
+                capture = null;
             }
-            catch (Exception error)
-            {
-                LogDebug($"Audio setup failed: {error.Message}");
-                notificationClient?.OnSelectedDeviceError(deviceId ?? "unknown", $"Audio setup failed: {error.Message}");
-                activeDevice = null;
-                enabled = false;
-            }
-        });
+
+            activeDevice?.Dispose();
+            activeDevice = device;
+
+            if (activeDevice.AudioEndpointVolume.HardwareSupport == 0)
+                throw new NotSupportedException($"Selected device '{activeDevice.FriendlyName}' does not support capturing.");
+
+            capture = new WasapiLoopbackCapture(activeDevice);
+            capture.DataAvailable += OnDataAvailable;
+            capture.WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
+            bytesPerSample = capture.WaveFormat.BitsPerSample / capture.WaveFormat.BlockAlign;
+            capture.StartRecording();
+            enabled = true;
+        }
+        catch (Exception error)
+        {
+            LogDebug($"Audio setup failed: {error.Message}");
+            notificationClient?.OnSelectedDeviceError(deviceId ?? "unknown", $"Audio setup failed: {error.Message}");
+            activeDevice = null;
+            enabled = false;
+        }
     }
 
     private float GetSmoothScalar() => GetSettingValue<float>(SqueakMeterSetting.SmoothScalar);

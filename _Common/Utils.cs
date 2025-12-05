@@ -9,7 +9,7 @@ namespace FuviiOSC.Common;
  
 public class FuviiCommonUtils
 {
-    public static bool IsParameterActuallyValid(ReceivedParameter param, HapticTriggerQueryableParameter queryableParameter)
+    public static bool IsParameterActuallyValid(VRChatParameter param, HapticTriggerQueryableParameter queryableParameter)
     {
         switch (param.Type)
         {

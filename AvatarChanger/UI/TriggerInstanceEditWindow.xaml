@@ -3,81 +3,71 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:core="clr-namespace:VRCOSC.App.UI.Core;assembly=VRCOSC.App"
-    xmlns:queryableParameter="clr-namespace:VRCOSC.App.UI.Views.Modules.Settings.QueryableParameter;assembly=VRCOSC.App"
-    xmlns:fa6="http://schemas.fontawesome.com/icons/fonts"
     mc:Ignorable="d"
-    MinWidth="512" MinHeight="256" Width="1024" Height="512"
+    MinWidth="512" MinHeight="256" Width="800" Height="512"
     Title="Edit Trigger">
-    <Window.Resources>
-        <core:AlternatingColourConverterMulti x:Key="AlternatingColourConverter" />
-        <core:BindingProxy x:Key="CBackground3Proxy" Data="{DynamicResource CBackground3}" />
-        <core:BindingProxy x:Key="CBackground4Proxy" Data="{DynamicResource CBackground4}" />
-    </Window.Resources>
     <Border Padding="10" Background="{DynamicResource CBackground2}">
-        <core:HeaderFooterListView ItemsSource="{Binding QueryableParameters}" AlternationCount="2">
-            <core:HeaderFooterListView.Header>
-                <core:SpacedStackPanel Spacing="10">
-                    <core:TitleDescriptionContent Title="Trigger Name" Description="Friendly name to display on the trigger list :3">
-                        <TextBox Text="{Binding TriggerName.Value, UpdateSourceTrigger=PropertyChanged}"
-                                 Background="{StaticResource CBackground3}" Foreground="{StaticResource CForeground1}"
-                                 FontSize="16"
-                                 HorizontalAlignment="Stretch" VerticalContentAlignment="Center" />
-                    </core:TitleDescriptionContent>
-                    <core:TitleDescriptionContent Title="Avatar ID" Description="ID of the avatar you want to change to (example: avtr_26187637-0c30-4a09-86e1-bc928c07309e)">
-                        <TextBox Text="{Binding AvatarId.Value, UpdateSourceTrigger=PropertyChanged}"
-                             Background="{StaticResource CBackground3}" Foreground="{StaticResource CForeground1}"
-                             FontSize="16"
-                             HorizontalAlignment="Stretch" VerticalContentAlignment="Center" />
-                    </core:TitleDescriptionContent>
-                    <Border Background="{DynamicResource CBackground1}" Height="30">
-                        <TextBlock
-                            Margin="5"
-                            Text="OSC parameters (OR / at least one must be true)"
-                            Foreground="{StaticResource CForeground2}"
-                            TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
-                            FontSize="16" VerticalAlignment="Center"
-                            TextAlignment="Center" />
-                    </Border>
-                </core:SpacedStackPanel>
-            </core:HeaderFooterListView.Header>
-            <ListView.ItemContainerStyle>
-                <Style TargetType="ListViewItem">
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate>
-                                <Border Padding="10">
-                                    <Border.Background>
-                                        <MultiBinding Converter="{StaticResource AlternatingColourConverter}">
-                                            <Binding RelativeSource="{RelativeSource Mode=TemplatedParent}" Path="(ItemsControl.AlternationIndex)" />
-                                            <Binding Source="{StaticResource CBackground3Proxy}" Path="Data"/>
-                                            <Binding Source="{StaticResource CBackground4Proxy}" Path="Data"/>
-                                        </MultiBinding>
-                                    </Border.Background>
-                                    <Grid>
-                                        <core:SpacedStackPanel Orientation="Horizontal" Spacing="10">
-                                            <queryableParameter:QueryableParameterView QueryableParameter="{Binding}"/>
-                                        </core:SpacedStackPanel>
-                                        <core:VRCOSCButton HorizontalAlignment="Right" ButtonColour="Red"
-                                                           Click="RemoveButton_OnClick"
-                                                           Height="30" Width="30" Tag="{Binding}">
-                                            <fa6:ImageAwesome Icon="Solid_Minus"
-                                                              PrimaryColor="{DynamicResource CForeground1}"
-                                                              Margin="4" />
-                                        </core:VRCOSCButton>
-                                    </Grid>
-                                </Border>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </ListView.ItemContainerStyle>
-            <core:HeaderFooterListView.Footer>
-                <Border Background="{DynamicResource CBackground1}">
-                    <core:IconButton Width="100" Height="20" Margin="0 5" Click="AddButton_OnClick" ButtonColour="Green"
-                                     Icon="Solid_Plus" Foreground="{DynamicResource CForeground1}" />
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            
+            <StackPanel Grid.Row="0" Margin="0 0 0 10">
+                <TextBlock Text="Trigger Name" Foreground="{StaticResource CForeground2}" FontSize="14" FontWeight="Bold" Margin="0 5 0 2" />
+                <TextBlock Text="Friendly name to display on the trigger list :3" Foreground="{StaticResource CForeground2}" FontSize="12" Margin="0 0 0 5" />
+                <TextBox Text="{Binding TriggerName.Value, UpdateSourceTrigger=PropertyChanged}"
+                         Background="{StaticResource CBackground3}" Foreground="{StaticResource CForeground1}"
+                         FontSize="16" Padding="5"
+                         HorizontalAlignment="Stretch" VerticalContentAlignment="Center" />
+                
+                <TextBlock Text="Avatar ID" Foreground="{StaticResource CForeground2}" FontSize="14" FontWeight="Bold" Margin="0 15 0 2" />
+                <TextBlock Text="ID of the avatar you want to change to (example: avtr_26187637-0c30-4a09-86e1-bc928c07309e)" Foreground="{StaticResource CForeground2}" FontSize="12" Margin="0 0 0 5" TextWrapping="Wrap" />
+                <TextBox Text="{Binding AvatarId.Value, UpdateSourceTrigger=PropertyChanged}"
+                         Background="{StaticResource CBackground3}" Foreground="{StaticResource CForeground1}"
+                         FontSize="16" Padding="5"
+                         HorizontalAlignment="Stretch" VerticalContentAlignment="Center" />
+                
+                <Border Background="{DynamicResource CBackground1}" Height="30" Margin="0 15 0 0">
+                    <TextBlock
+                        Margin="5"
+                        Text="OSC parameters (OR / at least one must be true)"
+                        Foreground="{StaticResource CForeground2}"
+                        TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                        FontSize="16" VerticalAlignment="Center"
+                        TextAlignment="Center" />
                 </Border>
-            </core:HeaderFooterListView.Footer>
-        </core:HeaderFooterListView>
+            </StackPanel>
+            
+            <ListView Grid.Row="1" ItemsSource="{Binding QueryableParameters}" AlternationCount="2">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate>
+                                    <Border Padding="10" Background="{StaticResource CBackground3}" Margin="0 2">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <ContentPresenter Grid.Column="0" />
+                                            <Button Grid.Column="1" Content="-" Background="#FFD32F2F" Foreground="White"
+                                                    Click="RemoveButton_OnClick" Height="30" Width="30" Tag="{Binding}" FontWeight="Bold" />
+                                        </Grid>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListView.ItemContainerStyle>
+            </ListView>
+            
+            <Border Grid.Row="2" Background="{DynamicResource CBackground1}" Margin="0 10 0 0">
+                <Button Content="Add Parameter" Width="120" Height="25" Margin="0 5" Click="AddButton_OnClick" 
+                        Background="#FF388E3C" Foreground="White" />
+            </Border>
+        </Grid>
     </Border>
 </Window>

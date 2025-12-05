@@ -95,55 +95,54 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
 
     public void UpdateDeviceList()
     {
-        Dispatcher.Invoke(() =>
+        if (!Dispatcher.CheckAccess())
         {
-            try
+            Dispatcher.BeginInvoke(new Action(UpdateDeviceList));
+            return;
+        }
+
+        try
+        {
+            ErrorMessage = null;
+
+            MMDeviceCollection audioDevices = Module.GetAudioOutputDevices();
+            if (audioDevices.Count == 0)
             {
-                ErrorMessage = null;
-
-                MMDeviceCollection audioDevices = Module.GetAudioOutputDevices();
-                if (audioDevices.Count == 0)
-                {
-                    Module.LogDebug("No audio devices found.");
-                    ErrorMessage = "No audio devices found.";
-                    return;
-                }
-
-                // Save the current selection
-                string previousSelectedId = Module.selectedDevice?.ID ?? SelectedDeviceId.Value;
-
-                // Update UI with the new list of devices
-                suppressSelectionChanged = true;
-                SelectedDeviceId.Value = String.Empty;
-                AudioDevices.Clear();
-                foreach (MMDevice device in audioDevices)
-                {
-                    bool isEnabled = !DisabledDevices.Any(d => d.ID == device.ID);
-                    AudioDevices.Add(new AudioDeviceInfo(device.ID, device.FriendlyName, isEnabled));
-                }
-
-                // Reset audio device to the first device if selected audio device is no longer available
-                if (Module.activeDevice == null || !audioDevices.Any(d => d.ID == previousSelectedId))
-                {
-                    Module.SetCaptureDevice(audioDevices[0].ID);
-                }
-                else
-                {
-                    SelectedDeviceId.Value = previousSelectedId;
-                }
-                suppressSelectionChanged = false;
+                Module.LogDebug("No audio devices found.");
+                ErrorMessage = "No audio devices found.";
+                return;
             }
-            catch (Exception error)
+
+            // Save the current selection
+            string previousSelectedId = Module.selectedDevice?.ID ?? SelectedDeviceId.Value;
+
+            // Update UI with the new list of devices
+            suppressSelectionChanged = true;
+            SelectedDeviceId.Value = String.Empty;
+            AudioDevices.Clear();
+            foreach (MMDevice device in audioDevices)
             {
-                suppressSelectionChanged = false;
-                ErrorMessage = $"Error updating audio devices: {error.Message}";
-                Module.LogDebug($"Error updating audio devices: {error.Message}");
+                bool isEnabled = !DisabledDevices.Any(d => d.ID == device.ID);
+                AudioDevices.Add(new AudioDeviceInfo(device.ID, device.FriendlyName, isEnabled));
             }
-        });
-    }
 
-    private void DeviceSelection_OnLostMouseCapture(object sender, MouseEventArgs e)
-    {
+            // Reset audio device to the first device if selected audio device is no longer available
+            if (Module.activeDevice == null || !audioDevices.Any(d => d.ID == previousSelectedId))
+            {
+                Module.SetCaptureDevice(audioDevices[0].ID);
+            }
+            else
+            {
+                SelectedDeviceId.Value = previousSelectedId;
+            }
+            suppressSelectionChanged = false;
+        }
+        catch (Exception error)
+        {
+            suppressSelectionChanged = false;
+            ErrorMessage = $"Error updating audio devices: {error.Message}";
+            Module.LogDebug($"Error updating audio devices: {error.Message}");
+        }
     }
 
     private void DeviceSelection_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -151,30 +150,33 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
         if (suppressSelectionChanged)
             return;
 
-        Dispatcher.Invoke(() =>
+        if (!Dispatcher.CheckAccess())
         {
-            ErrorMessage = null;
-            if (sender is not ComboBox comboBox)
-            {
-                ErrorMessage = "Device selection sender is not a ComboBox.";
-                return;
-            }
+            Dispatcher.BeginInvoke(new Action(() => DeviceSelection_OnSelectionChanged(sender, e)));
+            return;
+        }
 
-            if (comboBox.SelectedItem is AudioDeviceInfo selectedItem)
-            {
-                SelectedDeviceId.Value = selectedItem.ID;
-                Module.selectedDevice = selectedItem;
-                Module.SetCaptureDevice(selectedItem.ID);
-                Module.LogDebug($"Selected audio device: {selectedItem.FriendlyName} ({selectedItem.ID})");
-            }
-            else
-            {
-                SelectedDeviceId.Value = string.Empty;
-                Module.selectedDevice = null;
-                ErrorMessage = "No audio device selected.";
-                Module.LogDebug("No audio device selected.");
-            }
-        });
+        ErrorMessage = null;
+        if (sender is not ComboBox comboBox)
+        {
+            ErrorMessage = "Device selection sender is not a ComboBox.";
+            return;
+        }
+
+        if (comboBox.SelectedItem is AudioDeviceInfo selectedItem)
+        {
+            SelectedDeviceId.Value = selectedItem.ID;
+            Module.selectedDevice = selectedItem;
+            Module.SetCaptureDevice(selectedItem.ID);
+            Module.LogDebug($"Selected audio device: {selectedItem.FriendlyName} ({selectedItem.ID})");
+        }
+        else
+        {
+            SelectedDeviceId.Value = string.Empty;
+            Module.selectedDevice = null;
+            ErrorMessage = "No audio device selected.";
+            Module.LogDebug("No audio device selected.");
+        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

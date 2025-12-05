@@ -4,12 +4,10 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
-    xmlns:core="clr-namespace:VRCOSC.App.UI.Core;assembly=VRCOSC.App"
     mc:Ignorable="d"
 	xmlns:common="clr-namespace:FuviiOSC.Common"
 	xmlns:haptickle="clr-namespace:FuviiOSC.Haptickle">
 	<UserControl.Resources>
-		<core:AlternatingColourConverter x:Key="AlternatingColourConverter" Colour1="{StaticResource CBackground3}" Colour2="{StaticResource CBackground4}" />
 		<BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
 		<common:AllButFirstToVisibilityConverter x:Key="AllButFirstToVisibilityConverter" />
 		<common:InverseBooleanConverter x:Key="InverseBooleanConverter" />
@@ -22,7 +20,7 @@
 						<Setter Property="Template">
 							<Setter.Value>
 								<ControlTemplate>
-									<Border Background="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}, Path=(ItemsControl.AlternationIndex), Converter={StaticResource AlternatingColourConverter}}" VerticalAlignment="Top">
+									<Border Background="{StaticResource CBackground3}" VerticalAlignment="Top">
 										<Grid VerticalAlignment="Center" Margin="4,8,4,8">
 											<Grid.ColumnDefinitions>
 												<ColumnDefinition Width="*" />
@@ -57,9 +55,7 @@
 													<xctk:DoubleUpDown Value="{Binding PatternConfig.Speed, Mode=TwoWay}" Minimum="0.01" Maximum="4" Increment="0.01" FormatString="F2" Width="64" FontSize="14" />
 												</StackPanel>
 											</StackPanel>
-											<core:SpacedStackPanel Grid.Column="2" Spacing="5" FlowDirection="RightToLeft" Orientation="Horizontal" Margin="0,0,4,0">
-												<core:IconButton ButtonColour="Red" Icon="Solid_Minus" Width="25" Height="25" Click="RemoveDeviceButton_OnClick" Tag="{Binding}" />
-											</core:SpacedStackPanel>
+											<Button Grid.Column="2" Content="-" Background="#FFD32F2F" Foreground="White" Width="25" Height="25" Margin="0,0,4,0" Click="RemoveDeviceButton_OnClick" Tag="{Binding}" FontWeight="Bold" />
 										</Grid>
 									</Border>
 								</ControlTemplate>
@@ -69,14 +65,14 @@
 				</ListView.ItemContainerStyle>
 			</ListView>
 			<Border Background="{DynamicResource CBackground1}">
-				<core:IconButton
-					ButtonColour="Green"
+				<Button
+					Content="Add Device"
+					Background="#FF388E3C"
+					Foreground="White"
 					Width="100"
-					Height="20"
+					Height="25"
 					Margin="0 5"
-					Icon="Solid_Plus"
-					Click="AddDeviceButton_OnClick">
-				</core:IconButton>
+					Click="AddDeviceButton_OnClick" />
 			</Border>
 		</StackPanel>
 </UserControl>

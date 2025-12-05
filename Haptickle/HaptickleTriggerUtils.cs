@@ -132,7 +132,7 @@ public static class HaptickleUtils
     public static bool EvaluateIsValid(
         HapticTrigger trigger,
         QueryResult result,
-        ReceivedParameter receivedParameter,
+        VRChatParameter receivedParameter,
         HapticTriggerQueryableParameter queryableParameter,
         bool wasValid
     )

@@ -3,29 +3,27 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:core="clr-namespace:VRCOSC.App.UI.Core;assembly=VRCOSC.App"
     mc:Ignorable="d"
     Loaded="AvatarChangerModuleSettingView_OnLoaded">
-    <UserControl.Resources>
-        <core:AlternatingColourConverter x:Key="AlternatingColourConverter" Colour1="{StaticResource CBackground3}" Colour2="{StaticResource CBackground4}" />
-    </UserControl.Resources>
-    <core:HeaderFooterListView
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        
+        <Border Grid.Row="0" Background="{StaticResource CBackground1}" Height="30" Margin="0 10" />
+        
+        <ListView Grid.Row="1"
         ItemsSource="{Binding Attribute, Mode=OneWay}"
-        HideHeaderWhenEmpty="True"
-        ShouldTruncateHeight="False"
         AlternationCount="2">
-        <core:HeaderFooterListView.Header>
-            <core:SpacedStackPanel Spacing="10">
-                <Border Background="{StaticResource CBackground1}" Height="30" />
-            </core:SpacedStackPanel>
-        </core:HeaderFooterListView.Header>
         <ListView.ItemContainerStyle>
             <Style TargetType="ListViewItem">
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate>
                             <Border
-                                Background="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}, Path=(ItemsControl.AlternationIndex), Converter={StaticResource AlternatingColourConverter}}"
+                                Background="{StaticResource CBackground3}"
                                 VerticalAlignment="Top">
                                 <Grid VerticalAlignment="Center">
                                     <Grid.ColumnDefinitions>
@@ -39,12 +37,10 @@
                                         Foreground="{StaticResource CForeground2}"
                                         TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
                                         FontSize="16" FontWeight="Regular" VerticalAlignment="Center" TextAlignment="Left" />
-                                    <core:SpacedStackPanel Grid.Column="2" Spacing="5" FlowDirection="RightToLeft" Orientation="Horizontal" Margin="8 0">
-                                        <core:IconButton ButtonColour="Red" Icon="Solid_Minus" Width="25" Height="25" Click="RemoveInstanceButton_OnClick" Tag="{Binding}">
-                                        </core:IconButton>
-                                        <core:IconButton ButtonColour="Blue" Icon="Solid_PenToSquare" Width="25" Height="25" Click="EditInstanceButton_OnClick" Tag="{Binding}">
-                                        </core:IconButton>
-                                    </core:SpacedStackPanel>
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" FlowDirection="RightToLeft" Margin="8 0">
+                                        <Button Content="Edit" Background="#FF1976D2" Foreground="White" Width="50" Height="25" Margin="5 0" Click="EditInstanceButton_OnClick" Tag="{Binding}" />
+                                        <Button Content="-" Background="#FFD32F2F" Foreground="White" Width="25" Height="25" Margin="0 0 5 0" Click="RemoveInstanceButton_OnClick" Tag="{Binding}" FontWeight="Bold" />
+                                    </StackPanel>
                                 </Grid>
                             </Border>
                         </ControlTemplate>
@@ -52,17 +48,17 @@
                 </Setter>
             </Style>
         </ListView.ItemContainerStyle>
-        <core:HeaderFooterListView.Footer>
-            <Border Background="{StaticResource CBackground1}">
-                <core:IconButton
-                    ButtonColour="Green"
-                    Width="100"
-                    Height="20"
-                    Margin="0 5"
-                    Icon="Solid_Plus"
-                    Click="AddInstanceButton_OnClick">
-                </core:IconButton>
-            </Border>
-        </core:HeaderFooterListView.Footer>
-    </core:HeaderFooterListView>
+        </ListView>
+        
+        <Border Grid.Row="2" Background="{StaticResource CBackground1}">
+            <Button
+                Content="Add Trigger"
+                Background="#FF388E3C"
+                Foreground="White"
+                Width="100"
+                Height="25"
+                Margin="0 5"
+                Click="AddInstanceButton_OnClick" />
+        </Border>
+    </Grid>
 </UserControl>

@@ -4,8 +4,6 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
-    xmlns:core="clr-namespace:VRCOSC.App.UI.Core;assembly=VRCOSC.App"
-    xmlns:queryableParameter="clr-namespace:VRCOSC.App.UI.Views.Modules.Settings.QueryableParameter;assembly=VRCOSC.App"
     mc:Ignorable="d"
     xmlns:common="clr-namespace:FuviiOSC.Common"
     xmlns:haptickle="clr-namespace:FuviiOSC.Haptickle">
@@ -166,10 +164,10 @@
                                         <Setter Property="ContentTemplate">
                                             <Setter.Value>
                                                 <DataTemplate>
-                                                    <core:SpacedStackPanel Orientation="Horizontal" Spacing="10" Height="30">
-                                                        <TextBlock Text="When" Foreground="{DynamicResource CForeground1}" FontSize="17" VerticalAlignment="Center" />
-                                                        <TextBox FontSize="17" VerticalAlignment="Center" VerticalContentAlignment="Center" Text="{Binding Name.Value}" Width="300" />
-                                                    </core:SpacedStackPanel>
+                                                    <StackPanel Orientation="Horizontal" Height="30">
+                                                        <TextBlock Text="Parameter:" Foreground="{DynamicResource CForeground1}" FontSize="14" VerticalAlignment="Center" Margin="0,0,5,0" />
+                                                        <TextBox FontSize="14" VerticalAlignment="Center" VerticalContentAlignment="Center" Text="{Binding Name.Value}" Width="200" />
+                                                    </StackPanel>
                                                 </DataTemplate>
                                             </Setter.Value>
                                         </Setter>
@@ -181,7 +179,10 @@
                                                 <Setter Property="ContentTemplate">
                                                     <Setter.Value>
                                                         <DataTemplate>
-                                                            <queryableParameter:QueryableParameterView QueryableParameter="{Binding}" />
+                                                            <StackPanel Orientation="Horizontal" Height="30">
+                                                                <TextBlock Text="Parameter:" Foreground="{DynamicResource CForeground1}" FontSize="14" VerticalAlignment="Center" Margin="0,0,5,0" />
+                                                                <TextBox FontSize="14" VerticalAlignment="Center" VerticalContentAlignment="Center" Text="{Binding Name.Value}" Width="200" />
+                                                            </StackPanel>
                                                         </DataTemplate>
                                                     </Setter.Value>
                                                 </Setter>
@@ -190,7 +191,10 @@
                                                 <Setter Property="ContentTemplate">
                                                     <Setter.Value>
                                                         <DataTemplate>
-                                                            <queryableParameter:QueryableParameterView QueryableParameter="{Binding}" />
+                                                            <StackPanel Orientation="Horizontal" Height="30">
+                                                                <TextBlock Text="Parameter:" Foreground="{DynamicResource CForeground1}" FontSize="14" VerticalAlignment="Center" Margin="0,0,5,0" />
+                                                                <TextBox FontSize="14" VerticalAlignment="Center" VerticalContentAlignment="Center" Text="{Binding Name.Value}" Width="200" />
+                                                            </StackPanel>
                                                         </DataTemplate>
                                                     </Setter.Value>
                                                 </Setter>

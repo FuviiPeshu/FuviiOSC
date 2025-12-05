@@ -20,18 +20,13 @@ public class AvatarChangerModule : Module
         CreateGroup("Avatar Change Triggers", AvatarChangerSetting.AvatarChangerTriggerInstances);
     }
 
-    protected override async Task<bool> OnModuleStart()
+    protected override Task<bool> OnModuleStart()
     {
         ChangeState(AvatarChangerState.Default);
-        foreach (TriggerQueryableParameter? queryableParameter in GetSettingValue<List<AvatarChangerTrigger>>(AvatarChangerSetting.AvatarChangerTriggerInstances).SelectMany(trigger => trigger.TriggerParams))
-        {
-            await queryableParameter.Init();
-        }
-
-        return true;
+        return Task.FromResult(true);
     }
 
-    protected override void OnAnyParameterReceived(ReceivedParameter receivedParameter)
+    protected override void OnAnyParameterReceived(VRChatParameter receivedParameter)
     {
         List<AvatarChangerTrigger> triggers = GetSettingValue<List<AvatarChangerTrigger>>(AvatarChangerSetting.AvatarChangerTriggerInstances);
         foreach (AvatarChangerTrigger trigger in triggers)
