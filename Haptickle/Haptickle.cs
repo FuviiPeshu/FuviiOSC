@@ -40,6 +40,9 @@ public class HaptickleModule : Module
 
         CreateCustomSetting(HaptickleSetting.ExternalDeviceList, new HaptickleModuleSetting());
 
+        RegisterParameter<float>(HaptickleParameter.Enabled, "VRCOSC/Haptickle/Enabled", ParameterMode.Write, "Enabled", "True when at least one haptic device is configured/connected (either SteamVR or external one)");
+        RegisterParameter<float>(HaptickleParameter.Triggered, "VRCOSC/Haptickle/Triggered", ParameterMode.Write, "Triggered", "True when when at least one device haptic conditions are met and feedback is being triggered");
+
         SetRuntimeView(typeof(HaptickleModuleRuntimeView));
     }
 
@@ -90,6 +93,8 @@ public class HaptickleModule : Module
             LogDebug($"Error while stopping external devices: {error.Message}");
         }
 
+        SendParameter(HaptickleParameter.Enabled, 0.0f);
+        SendParameter(HaptickleParameter.Triggered, 0.0f);
 
         return Task.CompletedTask;
     }
@@ -221,6 +226,8 @@ public class HaptickleModule : Module
         CancellationTokenSource pulseToken = new CancellationTokenSource();
         _pulseTokens[key] = pulseToken;
 
+        UpdateActiveState();
+
         Task.Run(async () =>
         {
             int index = 0;
@@ -257,6 +264,7 @@ public class HaptickleModule : Module
 
                 await Task.Delay(pulseDuration + _DEFAULT_PULSE_INTERVAL, pulseToken.Token);
             }
+
             StopPulseLoop(trigger);
         }, pulseToken.Token);
     }
@@ -269,6 +277,7 @@ public class HaptickleModule : Module
             pulseToken.Cancel();
             _pulseTokens.Remove(key);
         }
+        UpdateActiveState();
     }
 
     private void StartExternalPatternLoop(DeviceMapping mapping, string? key = null, HapticTriggerMode mode = HapticTriggerMode.Constant)
@@ -277,6 +286,8 @@ public class HaptickleModule : Module
 
         var tokenSource = new CancellationTokenSource();
         _externalPulseTokens[mapping.DeviceIp] = tokenSource;
+
+        UpdateActiveState();
 
         Task.Run(async () =>
         {
@@ -343,6 +354,8 @@ public class HaptickleModule : Module
             token.Cancel();
             _externalPulseTokens.Remove(mapping.DeviceIp);
         }
+
+        UpdateActiveState();
     }
 
     private void HandleConstant(HapticTrigger trigger, string key, bool isValid, bool wasValid, QueryResult result)
@@ -423,6 +436,24 @@ public class HaptickleModule : Module
     public float GetTimeoutValue() => GetSettingValue<int>(HaptickleSetting.Timeout);
     public List<DeviceMapping> GetExternalDevices() => GetSettingValue<List<DeviceMapping>>(HaptickleSetting.ExternalDeviceList);
 
+    private void UpdateActiveState()
+    {
+        bool triggered = _pulseTokens.Count > 0 || _externalPulseTokens.Count > 0;
+        bool hasConfiguredDevice = (HapticTriggers != null && HapticTriggers.Count > 0);
+        try
+        {
+            List<DeviceMapping> external = GetExternalDevices();
+            if (external != null && external.Count > 0) hasConfiguredDevice = true;
+        }
+        catch (Exception error)
+        {
+            LogDebug($"Error while trying to read external devices state: {error.Message}");
+        }
+
+        SendParameter(HaptickleParameter.Enabled, hasConfiguredDevice ? 1.0f : 0.0f);
+        SendParameter(HaptickleParameter.Triggered, triggered ? 1.0f : 0.0f);
+    }
+
     public enum HaptickleSetting
     {
         Timeout,
@@ -432,5 +463,7 @@ public class HaptickleModule : Module
 
     public enum HaptickleParameter
     {
+        Enabled = 0,
+        Triggered = 1,
     }
 }
