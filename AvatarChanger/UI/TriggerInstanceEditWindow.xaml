@@ -3,9 +3,18 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:utils="clr-namespace:VRCOSC.App.SDK.Utils;assembly=VRCOSC.App"
+    xmlns:common="clr-namespace:FuviiOSC.Common"
+    xmlns:queryableParameter="clr-namespace:VRCOSC.App.UI.Views.Modules.Settings.QueryableParameter;assembly=VRCOSC.App"
+    xmlns:core="clr-namespace:VRCOSC.App.UI.Core;assembly=VRCOSC.App"
     mc:Ignorable="d"
-    MinWidth="512" MinHeight="256" Width="800" Height="512"
+    MinWidth="512" MinHeight="256" Width="1200" Height="512"
     Title="Edit Trigger">
+    <Window.Resources>
+        <core:AlternatingColourConverterMulti x:Key="AlternatingColourConverter" />
+        <core:BindingProxy x:Key="CBackground3Proxy" Data="{DynamicResource CBackground3}"/>
+        <core:BindingProxy x:Key="CBackground4Proxy" Data="{DynamicResource CBackground4}"/>
+    </Window.Resources>
     <Border Padding="10" Background="{DynamicResource CBackground2}">
         <Grid>
             <Grid.RowDefinitions>
@@ -46,15 +55,19 @@
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate>
-                                    <Border Padding="10" Background="{StaticResource CBackground3}" Margin="0 2">
+                                    <Border Padding="5">
+                                        <Border.Background>
+                                            <MultiBinding Converter="{StaticResource AlternatingColourConverter}">
+                                                <Binding RelativeSource="{RelativeSource Mode=TemplatedParent}" Path="(ItemsControl.AlternationIndex)" />
+                                                <Binding Source="{StaticResource CBackground3Proxy}" Path="Data"/>
+                                                <Binding Source="{StaticResource CBackground4Proxy}" Path="Data"/>
+                                            </MultiBinding>
+                                        </Border.Background>
                                         <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <ContentPresenter Grid.Column="0" />
+                                            <queryableParameter:QueryableParameterView QueryableParameter="{Binding}"/>
                                             <Button Grid.Column="1" Content="-" Background="#FFD32F2F" Foreground="White"
-                                                    Click="RemoveButton_OnClick" Height="30" Width="30" Tag="{Binding}" FontWeight="Bold" />
+                                                    Click="RemoveButton_OnClick" Height="30" Width="30" Tag="{Binding}" 
+                                                    FontWeight="Bold" HorizontalAlignment="Right" />
                                         </Grid>
                                     </Border>
                                 </ControlTemplate>

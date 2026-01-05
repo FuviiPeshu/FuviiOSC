@@ -81,3 +81,14 @@ public class FuviiCommonUtils
         public static IEnumerable<T> AllValues => Enum.GetValues(typeof(T)).Cast<T>();
     }
 }
+
+// Helper classes for XAML binding to enum values
+public static class ParameterTypeHelper
+{
+    public static IEnumerable<ParameterType> AllValues => FuviiCommonUtils.EnumValuesGetter<ParameterType>.AllValues;
+}
+
+public static class ComparisonOperationHelper
+{
+    public static IEnumerable<ComparisonOperation> AllValues => FuviiCommonUtils.EnumValuesGetter<ComparisonOperation>.AllValues;
+}
