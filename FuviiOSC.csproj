@@ -10,6 +10,13 @@
 		<Title>Fuvii's Modules</Title>
 		<Product>FuviiOSC</Product>
 	</PropertyGroup>
+	<ItemGroup>
+	  <Compile Remove="VRCOSC-main\**" />
+	  <EmbeddedResource Remove="VRCOSC-main\**" />
+	  <None Remove="VRCOSC-main\**" />
+	  <Page Remove="VRCOSC-main\**" />
+	</ItemGroup>
+
 
 	<ItemGroup>
 		<PackageReference Include="VolcanicArts.VRCOSC.SDK" Version="2025.1120.0" />

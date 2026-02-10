@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows.Threading;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using VRCOSC.App.SDK.Modules;
@@ -15,26 +14,41 @@ namespace FuviiOSC.SqueakMeter;
 [ModuleType(ModuleType.Generic)]
 public class SqueakMeterModule : Module
 {
-    private bool enabled = true;
-    private bool shouldUpdate;
-    private float bass;
-    private float bassSmoothed;
-    private float bassSmoothedPrevious;
-    private float mid;
-    private float midSmoothed;
-    private float midSmoothedPrevious;
-    private float treble;
-    private float trebleSmoothed;
-    private float trebleSmoothedPrevious;
-    private float leftEarVolume;
-    private float leftEarSmoothedVolume;
-    private float rightEarVolume;
-    private float rightEarSmoothedVolume;
-    private float direction = 0;
-    private float previousDirection = 0;
-    private float volume = 0;
-    private float previousVolume = 0;
-    private int bytesPerSample;
+    // State
+    private bool _enabled = true;
+    private bool _shouldUpdate;
+    private int _bytesPerSample;
+
+    // Raw values
+    private float _bass;
+    private float _mid;
+    private float _treble;
+    private float _leftEarVolume;
+    private float _rightEarVolume;
+
+    // Smoothed values
+    private float _bassSmoothed;
+    private float _bassSmoothedPrevious;
+    private float _midSmoothed;
+    private float _midSmoothedPrevious;
+    private float _trebleSmoothed;
+    private float _trebleSmoothedPrevious;
+    private float _leftEarSmoothedVolume;
+    private float _rightEarSmoothedVolume;
+    private float _direction;
+    private float _previousDirection;
+    private float _volume;
+    private float _previousVolume;
+
+    // Audio capture
+    private AudioDeviceNotificationClient? _notificationClient = new AudioDeviceNotificationClient();
+    private readonly MMDeviceEnumerator _enumerator = new MMDeviceEnumerator();
+    private MMDevice? _activeDevice;
+    private WasapiLoopbackCapture? _capture;
+
+    // Constants
+    private const int VOLUME_BOOST_FACTOR = 8;
+    private const float PARAMETER_CHANGE_THRESHOLD = 0.001f;
 
     public AudioDeviceNotificationClient? notificationClient = new AudioDeviceNotificationClient();
     public readonly MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
@@ -68,7 +82,9 @@ public class SqueakMeterModule : Module
     protected override Task<bool> OnModuleStart()
     {
         if (selectedDevice != null)
+        {
             SetCaptureDevice(selectedDevice.ID);
+        }
 
         return Task.FromResult(true);
     }
@@ -85,16 +101,9 @@ public class SqueakMeterModule : Module
             }
 
             // Clean up audio capture
-            if (capture != null)
-            {
-                capture.DataAvailable -= OnDataAvailable;
-                capture.StopRecording();
-                capture.Dispose();
-                capture = null;
-            }
-            activeDevice?.Dispose();
-            activeDevice = null;
-        } catch (Exception error)
+            CleanupCapture();
+        }
+        catch (Exception error)
         {
             LogDebug($"Error during module stop: {error.Message}");
         }
@@ -102,111 +111,138 @@ public class SqueakMeterModule : Module
         return Task.CompletedTask;
     }
 
+    private void CleanupCapture()
+    {
+        if (capture != null)
+        {
+            capture.DataAvailable -= OnDataAvailable;
+            capture.StopRecording();
+            capture.Dispose();
+            capture = null;
+        }
+
+        activeDevice?.Dispose();
+        activeDevice = null;
+    }
+
     private void OnDataAvailable(object? sender, WaveInEventArgs args)
     {
         // Only process 32-bit float stereo audio
-        if (!shouldUpdate || bytesPerSample != 4 || args.BytesRecorded == 0)
+        if (!_shouldUpdate || _bytesPerSample != 4 || args.BytesRecorded == 0)
             return;
 
-        shouldUpdate = false;
-        int frameSize = bytesPerSample * 2; // 2 channels (stereo)
+        _shouldUpdate = false;
+
+        int frameSize = _bytesPerSample * 2; // 2 channels (stereo)
         int frameCount = args.BytesRecorded / frameSize;
+
+        if (frameCount == 0)
+        {
+            _leftEarVolume = 0;
+            _rightEarVolume = 0;
+            return;
+        }
+
         float leftSum = 0.0f;
         float rightSum = 0.0f;
+
         for (int i = 0; i < frameCount; i++)
         {
             int offset = i * frameSize;
             leftSum += Math.Abs(BitConverter.ToSingle(args.Buffer, offset));
-            rightSum += Math.Abs(BitConverter.ToSingle(args.Buffer, offset + bytesPerSample));
+            rightSum += Math.Abs(BitConverter.ToSingle(args.Buffer, offset + _bytesPerSample));
         }
 
-        // Avoid division by zero
-        if (frameCount == 0)
-        {
-            leftEarVolume = 0;
-            rightEarVolume = 0;
-        }
-        else
-        {
-            int volumeBoostFactor = 8; // boost to get reasonable values for volume
-            leftEarVolume = (leftSum / frameCount) * volumeBoostFactor;
-            rightEarVolume = (rightSum / frameCount) * volumeBoostFactor;
-        }
+        _leftEarVolume = (leftSum / frameCount) * VOLUME_BOOST_FACTOR;
+        _rightEarVolume = (rightSum / frameCount) * VOLUME_BOOST_FACTOR;
 
         // Calculate band volumes
-        (
-            float bassValue,
-            float midValue,
-            float trebleValue
-        ) = SqueakMeterUtils.AnalyzeFrequencies(args.Buffer, args.BytesRecorded, GetBassBoost(), GetMidBoost(), GetTrebleBoost(), GetGain());
-        bass = bassValue;
-        mid = midValue;
-        treble = trebleValue;
+        (_bass, _mid, _treble) = SqueakMeterUtils.AnalyzeFrequencies(
+            args.Buffer,
+            args.BytesRecorded,
+            GetBassBoost(),
+            GetMidBoost(),
+            GetTrebleBoost(),
+            GetGain());
     }
 
     [ModuleUpdate(ModuleUpdateMode.Custom, true, 32)]
     private void ModuleUpdate()
     {
-        if (!enabled)
+        if (!_enabled)
             return;
 
         try
         {
-            // Get smoothed values
-            float smoothScalar = GetSmoothScalar();
-            float gain = GetGain();
-            leftEarSmoothedVolume = SqueakMeterUtils.GetSmoothedValue(leftEarSmoothedVolume, leftEarVolume * gain, smoothScalar);
-            rightEarSmoothedVolume = SqueakMeterUtils.GetSmoothedValue(rightEarSmoothedVolume, rightEarVolume * gain, smoothScalar);
-            bassSmoothed = SqueakMeterUtils.GetSmoothedValue(bassSmoothed, bass * gain, smoothScalar);
-            midSmoothed = SqueakMeterUtils.GetSmoothedValue(midSmoothed, mid * gain, smoothScalar);
-            trebleSmoothed = SqueakMeterUtils.GetSmoothedValue(trebleSmoothed, treble * gain, smoothScalar);
-            // Handle NaN or Infinity values by resetting them
-            if (float.IsNaN(leftEarSmoothedVolume) || float.IsNaN(rightEarSmoothedVolume) ||
-                float.IsInfinity(leftEarSmoothedVolume) || float.IsInfinity(rightEarSmoothedVolume))
-            {
-                leftEarSmoothedVolume = 0;
-                rightEarSmoothedVolume = 0;
-            }
-            direction = SqueakMeterUtils.VRCClamp(-(leftEarSmoothedVolume * 2) + (rightEarSmoothedVolume * 2) + 0.5f);
-            volume = (leftEarSmoothedVolume + rightEarSmoothedVolume) / 2.0f;
-
-            // Send parameters only if they have changed significantly
-            if (Math.Abs(direction - previousDirection) > 0.001f)
-            {
-                SendParameterAndWait(SqueakMeterParameter.Direction, direction);
-                previousDirection = direction;
-            }
-            if (Math.Abs(volume - previousVolume) > 0.001f)
-            {
-                SendParameterAndWait(SqueakMeterParameter.Volume, volume);
-                previousVolume = volume;
-            }
-            if (Math.Abs(bassSmoothed - bassSmoothedPrevious) > 0.001f)
-            {
-                SendParameterAndWait(SqueakMeterParameter.Bass, bassSmoothed);
-                bassSmoothedPrevious = bassSmoothed;
-            }
-            if (Math.Abs(midSmoothed - midSmoothedPrevious) > 0.001f)
-            {
-                SendParameterAndWait(SqueakMeterParameter.Mid, midSmoothed);
-                midSmoothedPrevious = midSmoothed;
-            }
-            if (Math.Abs(trebleSmoothed - trebleSmoothedPrevious) > 0.001f)
-            {
-                SendParameterAndWait(SqueakMeterParameter.Treble, trebleSmoothed);
-                trebleSmoothedPrevious = trebleSmoothed;
-            }
-            // Reset the flag to allow next update
-            shouldUpdate = true;
+            UpdateSmoothedValues();
+            SendChangedParameters();
+            _shouldUpdate = true;
         }
         catch (Exception error)
         {
             LogDebug($"Audio module update failed: {error.Message}");
-            enabled = false;
+            _enabled = false;
         }
     }
 
-    public MMDeviceCollection GetAudioOutputDevices() => enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+    private void UpdateSmoothedValues()
+    {
+        float smoothScalar = GetSmoothScalar();
+        float gain = GetGain();
+
+        _leftEarSmoothedVolume = SqueakMeterUtils.GetSmoothedValue(_leftEarSmoothedVolume, _leftEarVolume * gain, smoothScalar);
+        _rightEarSmoothedVolume = SqueakMeterUtils.GetSmoothedValue(_rightEarSmoothedVolume, _rightEarVolume * gain, smoothScalar);
+        _bassSmoothed = SqueakMeterUtils.GetSmoothedValue(_bassSmoothed, _bass * gain, smoothScalar);
+        _midSmoothed = SqueakMeterUtils.GetSmoothedValue(_midSmoothed, _mid * gain, smoothScalar);
+        _trebleSmoothed = SqueakMeterUtils.GetSmoothedValue(_trebleSmoothed, _treble * gain, smoothScalar);
+
+        // Handle NaN or Infinity values by resetting them
+        if (float.IsNaN(_leftEarSmoothedVolume) || float.IsInfinity(_leftEarSmoothedVolume))
+            _leftEarSmoothedVolume = 0;
+        if (float.IsNaN(_rightEarSmoothedVolume) || float.IsInfinity(_rightEarSmoothedVolume))
+            _rightEarSmoothedVolume = 0;
+
+        _direction = SqueakMeterUtils.VRCClamp(-(_leftEarSmoothedVolume * 2) + (_rightEarSmoothedVolume * 2) + 0.5f);
+        _volume = (_leftEarSmoothedVolume + _rightEarSmoothedVolume) / 2.0f;
+    }
+
+    private void SendChangedParameters()
+    {
+        if (Math.Abs(_direction - _previousDirection) > PARAMETER_CHANGE_THRESHOLD)
+        {
+            SendParameter(SqueakMeterParameter.Direction, _direction);
+            _previousDirection = _direction;
+        }
+
+        if (Math.Abs(_volume - _previousVolume) > PARAMETER_CHANGE_THRESHOLD)
+        {
+            SendParameter(SqueakMeterParameter.Volume, _volume);
+            _previousVolume = _volume;
+        }
+
+        if (Math.Abs(_bassSmoothed - _bassSmoothedPrevious) > PARAMETER_CHANGE_THRESHOLD)
+        {
+            SendParameter(SqueakMeterParameter.Bass, _bassSmoothed);
+            _bassSmoothedPrevious = _bassSmoothed;
+        }
+
+        if (Math.Abs(_midSmoothed - _midSmoothedPrevious) > PARAMETER_CHANGE_THRESHOLD)
+        {
+            SendParameter(SqueakMeterParameter.Mid, _midSmoothed);
+            _midSmoothedPrevious = _midSmoothed;
+        }
+
+        if (Math.Abs(_trebleSmoothed - _trebleSmoothedPrevious) > PARAMETER_CHANGE_THRESHOLD)
+        {
+            SendParameter(SqueakMeterParameter.Treble, _trebleSmoothed);
+            _trebleSmoothedPrevious = _trebleSmoothed;
+        }
+    }
+
+    public MMDeviceCollection GetAudioOutputDevices()
+    {
+        return enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+    }
 
     public void SetCaptureDevice(string? deviceId)
     {
@@ -215,18 +251,9 @@ public class SqueakMeterModule : Module
         try
         {
             if (device == null)
-                throw new ArgumentNullException(nameof(device));
+                throw new ArgumentNullException(nameof(device), "Device not found");
 
-            // Clean up previous capture and device
-            if (capture != null)
-            {
-                capture.DataAvailable -= OnDataAvailable;
-                capture.StopRecording();
-                capture.Dispose();
-                capture = null;
-            }
-
-            activeDevice?.Dispose();
+            CleanupCapture();
             activeDevice = device;
 
             if (activeDevice.AudioEndpointVolume.HardwareSupport == 0)
@@ -235,16 +262,16 @@ public class SqueakMeterModule : Module
             capture = new WasapiLoopbackCapture(activeDevice);
             capture.DataAvailable += OnDataAvailable;
             capture.WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
-            bytesPerSample = capture.WaveFormat.BitsPerSample / capture.WaveFormat.BlockAlign;
+            _bytesPerSample = capture.WaveFormat.BitsPerSample / capture.WaveFormat.BlockAlign;
             capture.StartRecording();
-            enabled = true;
+            _enabled = true;
         }
         catch (Exception error)
         {
             LogDebug($"Audio setup failed: {error.Message}");
             notificationClient?.OnSelectedDeviceError(deviceId ?? "unknown", $"Audio setup failed: {error.Message}");
             activeDevice = null;
-            enabled = false;
+            _enabled = false;
         }
     }
 

@@ -6,74 +6,68 @@ using VRCOSC.App.SDK.Parameters;
 using VRCOSC.App.SDK.Utils;
 
 namespace FuviiOSC.Common;
- 
-public class FuviiCommonUtils
+
+public static class FuviiCommonUtils
 {
     public static bool IsParameterActuallyValid(VRChatParameter param, HapticTriggerQueryableParameter queryableParameter)
     {
-        switch (param.Type)
+        return param.Type switch
         {
-            case ParameterType.Float:
-                {
-                    float value = param.GetValue<float>();
-                    float threshold = queryableParameter.FloatValue.Value;
-                    switch (queryableParameter.Comparison.Value)
-                    {
-                        case ComparisonOperation.GreaterThan:
-                            return value > threshold;
-                        case ComparisonOperation.LessThan:
-                            return value < threshold;
-                        case ComparisonOperation.GreaterThanOrEqualTo:
-                            return value >= threshold;
-                        case ComparisonOperation.LessThanOrEqualTo:
-                            return value <= threshold;
-                        case ComparisonOperation.EqualTo:
-                            return Math.Abs(value - threshold) < float.Epsilon;
-                        case ComparisonOperation.NotEqualTo:
-                            return Math.Abs(value - threshold) >= float.Epsilon;
-                        default:
-                            return false;
-                    }
-                }
-            case ParameterType.Int:
-                {
-                    int value = param.GetValue<int>();
-                    int threshold = queryableParameter.IntValue.Value;
-                    switch (queryableParameter.Comparison.Value)
-                    {
-                        case ComparisonOperation.GreaterThan:
-                            return value > threshold;
-                        case ComparisonOperation.LessThan:
-                            return value < threshold;
-                        case ComparisonOperation.GreaterThanOrEqualTo:
-                            return value >= threshold;
-                        case ComparisonOperation.LessThanOrEqualTo:
-                            return value <= threshold;
-                        case ComparisonOperation.EqualTo:
-                            return value == threshold;
-                        case ComparisonOperation.NotEqualTo:
-                            return value != threshold;
-                        default:
-                            return false;
-                    }
-                }
-            case ParameterType.Bool:
-                {
-                    bool value = param.GetValue<bool>();
-                    bool threshold = queryableParameter.BoolValue.Value;
-                    switch (queryableParameter.Comparison.Value)
-                    {
-                        case ComparisonOperation.EqualTo:
-                            return value == threshold;
-                        case ComparisonOperation.NotEqualTo:
-                            return value != threshold;
-                        default:
-                            return false;
-                    }
-                }
-            default:
-                return false;
-        }
+            ParameterType.Float => EvaluateFloatComparison(
+                param.GetValue<float>(),
+                queryableParameter.FloatValue.Value,
+                queryableParameter.Comparison.Value),
+
+            ParameterType.Int => EvaluateIntComparison(
+                param.GetValue<int>(),
+                queryableParameter.IntValue.Value,
+                queryableParameter.Comparison.Value),
+
+            ParameterType.Bool => EvaluateBoolComparison(
+                param.GetValue<bool>(),
+                queryableParameter.BoolValue.Value,
+                queryableParameter.Comparison.Value),
+
+            _ => false
+        };
+    }
+
+    private static bool EvaluateFloatComparison(float value, float threshold, ComparisonOperation operation)
+    {
+        return operation switch
+        {
+            ComparisonOperation.GreaterThan => value > threshold,
+            ComparisonOperation.LessThan => value < threshold,
+            ComparisonOperation.GreaterThanOrEqualTo => value >= threshold,
+            ComparisonOperation.LessThanOrEqualTo => value <= threshold,
+            ComparisonOperation.EqualTo => Math.Abs(value - threshold) < float.Epsilon,
+            ComparisonOperation.NotEqualTo => Math.Abs(value - threshold) >= float.Epsilon,
+            _ => false
+        };
+    }
+
+    private static bool EvaluateIntComparison(int value, int threshold, ComparisonOperation operation)
+    {
+        return operation switch
+        {
+            ComparisonOperation.GreaterThan => value > threshold,
+            ComparisonOperation.LessThan => value < threshold,
+            ComparisonOperation.GreaterThanOrEqualTo => value >= threshold,
+            ComparisonOperation.LessThanOrEqualTo => value <= threshold,
+            ComparisonOperation.EqualTo => value == threshold,
+            ComparisonOperation.NotEqualTo => value != threshold,
+            _ => false
+        };
+    }
+
+    private static bool EvaluateBoolComparison(bool value, bool threshold, ComparisonOperation operation)
+    {
+        return operation switch
+        {
+            ComparisonOperation.EqualTo => value == threshold,
+            ComparisonOperation.NotEqualTo => value != threshold,
+            _ => false
+        };
     }
 
     public static class EnumValuesGetter<T> where T : struct, Enum
@@ -82,7 +76,6 @@ public class FuviiCommonUtils
     }
 }
 
-// Helper classes for XAML binding to enum values
 public static class ParameterTypeHelper
 {
     public static IEnumerable<ParameterType> AllValues => FuviiCommonUtils.EnumValuesGetter<ParameterType>.AllValues;
