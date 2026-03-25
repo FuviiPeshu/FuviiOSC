@@ -80,7 +80,14 @@ public class HaptickleModule : Module
 
         foreach (CancellationTokenSource pulseToken in _externalPulseTokens.Values)
             pulseToken.Cancel();
+
         _externalPulseTokens.Clear();
+        _lastFloatValues.Clear();
+        _lastTriggerValues.Clear();
+        _lastTriggerDeltas.Clear();
+        _triggerStartTimes.Clear();
+        _lastValueTimestamps.Clear();
+        _parameterValidStates.Clear();
 
         try
         {
@@ -189,7 +196,7 @@ public class HaptickleModule : Module
                         }
                         break;
                     case HapticTriggerMode.Velocity:
-                        DateTime lastTimestamp = lastTime != null ? lastTime : now;
+                        DateTime lastTimestamp = _lastValueTimestamps.ContainsKey(key) ? lastTime : now;
                         float lastValue = _lastTriggerValues.TryGetValue(key, out float v) ? v : value;
                         float deltaTime = (float)Math.Max((now - lastTimestamp).TotalSeconds, _VELOCITY_TIME_SCALAR);
                         float speed = mapping.PatternConfig?.Speed ?? 1.0f;
@@ -319,6 +326,7 @@ public class HaptickleModule : Module
                     }
                 }
 
+                var patternConfig = mapping.PatternConfig ?? new VibrationPatternConfig();
                 float patterned = 0.0f;
                 switch (mode)
                 {
@@ -326,13 +334,13 @@ public class HaptickleModule : Module
                         break;
                     case HapticTriggerMode.Constant:
                     case HapticTriggerMode.OnChange:
-                        patterned = VibrationPattern.Apply(mapping.PatternConfig, 1.0f, 0.0f, phase);
+                        patterned = VibrationPattern.Apply(patternConfig, 1.0f, 0.0f, phase);
                         break;
                     case HapticTriggerMode.Proximity:
-                        patterned = VibrationPattern.Apply(mapping.PatternConfig, value, 0.0f, phase);
+                        patterned = VibrationPattern.Apply(patternConfig, value, 0.0f, phase);
                         break;
                     case HapticTriggerMode.Velocity:
-                        patterned = VibrationPattern.Apply(mapping.PatternConfig, delta, 0.0f, phase);
+                        patterned = VibrationPattern.Apply(patternConfig, delta, 0.0f, phase);
                         break;
                 }
 

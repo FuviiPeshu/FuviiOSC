@@ -17,7 +17,7 @@ public class AvatarChangerModule : Module
 
         CreateState(AvatarChangerState.Default, "Default");
 
-        CreateGroup("Avatar Change Triggers", AvatarChangerSetting.AvatarChangerTriggerInstances);
+        CreateGroup("Avatar Change Triggers", "", AvatarChangerSetting.AvatarChangerTriggerInstances);
     }
 
     protected override Task<bool> OnModuleStart()

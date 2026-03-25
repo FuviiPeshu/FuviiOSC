@@ -36,6 +36,7 @@ public static class FuviiCommonUtils
     {
         return operation switch
         {
+            ComparisonOperation.Changed => true,
             ComparisonOperation.GreaterThan => value > threshold,
             ComparisonOperation.LessThan => value < threshold,
             ComparisonOperation.GreaterThanOrEqualTo => value >= threshold,
@@ -50,6 +51,7 @@ public static class FuviiCommonUtils
     {
         return operation switch
         {
+            ComparisonOperation.Changed => true,
             ComparisonOperation.GreaterThan => value > threshold,
             ComparisonOperation.LessThan => value < threshold,
             ComparisonOperation.GreaterThanOrEqualTo => value >= threshold,
@@ -64,6 +66,7 @@ public static class FuviiCommonUtils
     {
         return operation switch
         {
+            ComparisonOperation.Changed => true,
             ComparisonOperation.EqualTo => value == threshold,
             ComparisonOperation.NotEqualTo => value != threshold,
             _ => false
@@ -72,16 +75,16 @@ public static class FuviiCommonUtils
 
     public static class EnumValuesGetter<T> where T : struct, Enum
     {
-        public static IEnumerable<T> AllValues => Enum.GetValues(typeof(T)).Cast<T>();
+        public static T[] AllValues { get; } = Enum.GetValues<T>();
     }
 }
 
 public static class ParameterTypeHelper
 {
-    public static IEnumerable<ParameterType> AllValues => FuviiCommonUtils.EnumValuesGetter<ParameterType>.AllValues;
+    public static ParameterType[] AllValues => FuviiCommonUtils.EnumValuesGetter<ParameterType>.AllValues;
 }
 
 public static class ComparisonOperationHelper
 {
-    public static IEnumerable<ComparisonOperation> AllValues => FuviiCommonUtils.EnumValuesGetter<ComparisonOperation>.AllValues;
+    public static ComparisonOperation[] AllValues => FuviiCommonUtils.EnumValuesGetter<ComparisonOperation>.AllValues;
 }

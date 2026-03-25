@@ -40,12 +40,6 @@ public class SqueakMeterModule : Module
     private float _volume;
     private float _previousVolume;
 
-    // Audio capture
-    private AudioDeviceNotificationClient? _notificationClient = new AudioDeviceNotificationClient();
-    private readonly MMDeviceEnumerator _enumerator = new MMDeviceEnumerator();
-    private MMDevice? _activeDevice;
-    private WasapiLoopbackCapture? _capture;
-
     // Constants
     private const int VOLUME_BOOST_FACTOR = 8;
     private const float PARAMETER_CHANGE_THRESHOLD = 0.001f;
@@ -102,6 +96,9 @@ public class SqueakMeterModule : Module
 
             // Clean up audio capture
             CleanupCapture();
+
+            // Dispose enumerator
+            enumerator?.Dispose();
         }
         catch (Exception error)
         {

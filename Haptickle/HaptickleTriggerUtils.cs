@@ -21,7 +21,7 @@ public enum HapticTriggerMode
 
 public static class HapticTriggerModeHelper
 {
-    public static IEnumerable<HapticTriggerMode> AllValues => FuviiCommonUtils.EnumValuesGetter<HapticTriggerMode>.AllValues;
+    public static HapticTriggerMode[] AllValues => FuviiCommonUtils.EnumValuesGetter<HapticTriggerMode>.AllValues;
 }
 
 public class HapticTrigger
@@ -53,7 +53,7 @@ public enum VibrationPatternType
 
 public static class VibrationPatternTypeHelper
 {
-    public static IEnumerable<VibrationPatternType> AllValues => FuviiCommonUtils.EnumValuesGetter<VibrationPatternType>.AllValues;
+    public static VibrationPatternType[] AllValues => FuviiCommonUtils.EnumValuesGetter<VibrationPatternType>.AllValues;
 }
 
 public class VibrationPatternConfig
