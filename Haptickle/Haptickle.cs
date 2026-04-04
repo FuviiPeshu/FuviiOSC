@@ -30,6 +30,7 @@ public class HaptickleModule : Module
     private const float _MIN_MARGIN = 0.02f, _VELOCITY_TIME_SCALAR = 0.1f;
 
     public CVRSystem? openVrSystem;
+    private bool _ownOpenVR;
 
     [ModulePersistent("hapticTriggers")]
     public List<HapticTrigger> HapticTriggers { get; set; } = new();
@@ -51,16 +52,26 @@ public class HaptickleModule : Module
         EVRInitError evrError = EVRInitError.None;
         try
         {
-            openVrSystem = OpenVR.Init(ref evrError, EVRApplicationType.VRApplication_Overlay);
-            if (evrError != EVRInitError.None || openVrSystem == null)
+            if (OpenVR.System != null)
             {
-                throw new Exception($"OpenVR initialization failed with error: {evrError}");
+                openVrSystem = OpenVR.System;
+                _ownOpenVR = false;
+            }
+            else
+            {
+                openVrSystem = OpenVR.Init(ref evrError, EVRApplicationType.VRApplication_Overlay);
+                if (evrError != EVRInitError.None || openVrSystem == null)
+                {
+                    throw new Exception($"OpenVR initialization failed with error: {evrError}");
+                }
+                _ownOpenVR = true;
             }
         }
         catch (Exception error)
         {
             LogDebug($"Error during module start: {error.Message}");
             openVrSystem = null;
+            _ownOpenVR = false;
             return Task.FromResult(false);
         }
         return Task.FromResult(true);
@@ -70,8 +81,12 @@ public class HaptickleModule : Module
     {
         if (openVrSystem != null)
         {
-            OpenVR.Shutdown();
+            if (_ownOpenVR)
+            {
+                OpenVR.Shutdown();
+            }
             openVrSystem = null;
+            _ownOpenVR = false;
         }
 
         foreach (CancellationTokenSource pulseToken in _pulseTokens.Values)

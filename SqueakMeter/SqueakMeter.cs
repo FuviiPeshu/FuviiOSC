@@ -18,14 +18,12 @@ public class SqueakMeterModule : Module
     private bool _enabled = true;
     private bool _shouldUpdate;
     private int _bytesPerSample;
-
     // Raw values
     private float _bass;
     private float _mid;
     private float _treble;
     private float _leftEarVolume;
     private float _rightEarVolume;
-
     // Smoothed values
     private float _bassSmoothed;
     private float _bassSmoothedPrevious;
@@ -39,7 +37,6 @@ public class SqueakMeterModule : Module
     private float _previousDirection;
     private float _volume;
     private float _previousVolume;
-
     // Constants
     private const int VOLUME_BOOST_FACTOR = 8;
     private const float PARAMETER_CHANGE_THRESHOLD = 0.001f;
@@ -75,10 +72,20 @@ public class SqueakMeterModule : Module
 
     protected override Task<bool> OnModuleStart()
     {
-        if (selectedDevice != null)
+        if (notificationClient == null)
+            notificationClient = new AudioDeviceNotificationClient();
+
+        try
         {
-            SetCaptureDevice(selectedDevice.ID);
+            enumerator.RegisterEndpointNotificationCallback(notificationClient);
         }
+        catch (Exception error)
+        {
+            LogDebug($"Failed to register audio device notification callback: {error.Message}");
+        }
+
+        if (selectedDevice != null)
+            SetCaptureDevice(selectedDevice.ID);
 
         return Task.FromResult(true);
     }
@@ -87,18 +94,21 @@ public class SqueakMeterModule : Module
     {
         try
         {
-            // Unregister audio device notification callback
             if (notificationClient != null)
             {
-                enumerator.UnregisterEndpointNotificationCallback(notificationClient);
+                try
+                {
+                    enumerator.UnregisterEndpointNotificationCallback(notificationClient);
+                }
+                catch (Exception error)
+                {
+                    LogDebug($"Failed to unregister audio device notification callback: {error.Message}");
+                }
                 notificationClient = null;
             }
 
-            // Clean up audio capture
             CleanupCapture();
-
-            // Dispose enumerator
-            enumerator?.Dispose();
+            // Do NOT dispose enumerator here — it's reused across start/stop cycles and the UI runtime may still call stuff
         }
         catch (Exception error)
         {

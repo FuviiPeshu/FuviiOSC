@@ -61,3 +61,7 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+* text=auto eol=lf
+*.sln  text eol=crlf
+*.csproj text eol=crlf

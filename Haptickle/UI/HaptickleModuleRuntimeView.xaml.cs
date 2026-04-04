@@ -65,12 +65,16 @@ public partial class HaptickleModuleRuntimeView
                         Trackers.Add(savedTrigger);
                     }
                     else
-                        Trackers.Add(new HapticTrigger
+                    {
+                        HapticTrigger newTrigger = new HapticTrigger
                         {
                             DeviceIndex = (int)i,
                             DeviceSerialNumber = serialNumber,
                             HapticTriggerParams = [new HapticTriggerQueryableParameter()],
-                        });
+                        };
+                        Module.HapticTriggers.Add(newTrigger);
+                        Trackers.Add(newTrigger);
+                    }
                 }
             });
         }
