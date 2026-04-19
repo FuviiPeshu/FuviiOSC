@@ -10,7 +10,10 @@ using VRCOSC.App.SDK.Parameters;
 namespace FuviiOSC.SqueakMeter;
 
 [ModuleTitle("Squeak Meter")]
-[ModuleDescription("Listens to the selected audio output device and provides OSC parameters for volume, frequencies and direction. To select audio device go to the 'Run' tab")]
+[ModuleDescription(
+    "\t\t   --- Note: Audio device has to be assigned inside 'Run' tab.\n" +
+    "Listens to the selected audio output device and provides OSC parameters for volume, frequencies and direction"
+)]
 [ModuleType(ModuleType.Generic)]
 public class SqueakMeterModule : Module
 {
@@ -40,6 +43,13 @@ public class SqueakMeterModule : Module
     // Constants
     private const int VOLUME_BOOST_FACTOR = 8;
     private const float PARAMETER_CHANGE_THRESHOLD = 0.001f;
+
+    // Public accessors for runtime view
+    public float CurrentVolume => _volume;
+    public float CurrentBass => _bassSmoothed;
+    public float CurrentMid => _midSmoothed;
+    public float CurrentTreble => _trebleSmoothed;
+    public float CurrentDirection => _direction;
 
     public AudioDeviceNotificationClient? notificationClient = new AudioDeviceNotificationClient();
     public readonly MMDeviceEnumerator enumerator = new MMDeviceEnumerator();

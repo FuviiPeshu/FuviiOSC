@@ -10,8 +10,16 @@
         <common:AllButFirstToVisibilityConverter x:Key="AllButFirstToVisibilityConverter" />
         <common:NonEmptyStringToVisibilityConverter x:Key="NonEmptyStringToVisibilityConverter" />
     </UserControl.Resources>
-    <StackPanel>
-        <ComboBox
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MinWidth="200" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="240" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Left: Device selection & disabled list -->
+        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+            <ComboBox
             x:Name="DeviceSelection"
             ItemsSource="{Binding AudioDevices}"
             SelectedValue="{Binding SelectedDeviceId.Value, Mode=TwoWay}"
@@ -66,12 +74,199 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="{Binding FriendlyName}" Grid.Column="0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" FontSize="16" FontWeight="Regular" HorizontalAlignment="Stretch" VerticalAlignment="Center" TextAlignment="Left" />
-                                <Button Tag="{Binding}" Click="RemoveDisabledDevice" Content="-" Grid.Column="1" Background="#FFD32F2F" Foreground="White" Width="25" Height="25" HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="Bold" />
+                                <Button Tag="{Binding}" Click="RemoveDisabledDevice" Style="{StaticResource RemoveButton}" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" />
                             </Grid>
                         </Border>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
         </GroupBox>
-    </StackPanel>
+        </StackPanel>
+
+        <!-- Divider -->
+        <Rectangle Grid.Column="1" Style="{StaticResource VerticalDivider}" Margin="4,5,4,0" />
+
+        <!-- Right: Channel monitors -->
+        <StackPanel Grid.Column="2" Margin="4,5,0,0">
+            <!-- Header: Toggle + context controls -->
+            <Grid Margin="0,0,0,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Border CornerRadius="3" Background="{StaticResource WhiteSubtle}" Height="20" Margin="0,0,6,0">
+                    <Grid x:Name="ToggleGrid" ClipToBounds="True">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border x:Name="ToggleHighlight" Grid.Column="0" Background="{StaticResource PurpleAccent}" CornerRadius="3" Opacity="0.7" IsHitTestVisible="False">
+                            <Border.RenderTransform>
+                                <TranslateTransform x:Name="ToggleTranslate" X="0" />
+                            </Border.RenderTransform>
+                        </Border>
+                        <Border Grid.Column="0" Background="Transparent" MouseLeftButtonDown="Toggle_Frequencies" Cursor="Hand">
+                            <TextBlock x:Name="ToggleFreqLabel" Text="Frequencies" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="9" Foreground="White" FontWeight="SemiBold" />
+                        </Border>
+                        <Border Grid.Column="1" Background="Transparent" MouseLeftButtonDown="Toggle_History" Cursor="Hand">
+                            <TextBlock x:Name="ToggleHistLabel" Text="History" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="9" Foreground="{StaticResource WhiteSoft}" />
+                        </Border>
+                    </Grid>
+                </Border>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="ResetPeakBtn" Content="↺" Click="ResetPeak_Click"
+                            FontSize="12" Width="36" Height="18" Padding="4,0,0,0"
+                            Background="Transparent" Foreground="{StaticResource WhiteSoft}" BorderThickness="0"
+                            Cursor="Hand" ToolTip="Reset peak markers" />
+                    <ComboBox x:Name="HistorySelector" FontSize="9" Width="36" Height="18" Padding="4,0,0,0"
+                              VerticalContentAlignment="Center" Visibility="Collapsed"
+                              SelectionChanged="HistorySelector_OnSelectionChanged">
+                        <ComboBoxItem Content="2s" />
+                        <ComboBoxItem Content="5s" IsSelected="True" />
+                        <ComboBoxItem Content="10s" />
+                        <ComboBoxItem Content="30s" />
+                        <ComboBoxItem Content="60s" />
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
+
+            <!-- Content -->
+            <Grid Height="128">
+                <!-- Simnple chart panel -->
+                <Grid x:Name="FrequenciesPanel" Margin="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="20" />
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" x:Name="EqBarGrid">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="3" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="3" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <!-- Volume (narrow) -->
+                        <Border Grid.Column="0" Background="{StaticResource WhiteSubtle}" CornerRadius="2" />
+                        <Border x:Name="EqVolBar" Grid.Column="0" Background="{StaticResource GoldAccent}" CornerRadius="2" VerticalAlignment="Bottom" Opacity="0.85" />
+                        <Border x:Name="EqVolPeak" Grid.Column="0" Height="1" Background="{StaticResource GoldPeak}" VerticalAlignment="Bottom" IsHitTestVisible="False" />
+                        <!-- Bass -->
+                        <Border Grid.Column="2" Background="{StaticResource WhiteSubtle}" CornerRadius="2" />
+                        <Border x:Name="EqBassBar" Grid.Column="2" Background="{StaticResource PurpleAccent}" CornerRadius="2" VerticalAlignment="Bottom" Opacity="0.85" />
+                        <Border x:Name="EqBassPeak" Grid.Column="2" Height="1" Background="{StaticResource PurplePeak}" VerticalAlignment="Bottom" IsHitTestVisible="False" />
+                        <!-- Mid -->
+                        <Border Grid.Column="4" Background="{StaticResource WhiteSubtle}" CornerRadius="2" />
+                        <Border x:Name="EqMidBar" Grid.Column="4" Background="{StaticResource CyanAccent}" CornerRadius="2" VerticalAlignment="Bottom" Opacity="0.85" />
+                        <Border x:Name="EqMidPeak" Grid.Column="4" Height="1" Background="{StaticResource CyanPeak}" VerticalAlignment="Bottom" IsHitTestVisible="False" />
+                        <!-- Treble -->
+                        <Border Grid.Column="6" Background="{StaticResource WhiteSubtle}" CornerRadius="2" />
+                        <Border x:Name="EqTrebleBar" Grid.Column="6" Background="{StaticResource GreenAccent}" CornerRadius="2" VerticalAlignment="Bottom" Opacity="0.85" />
+                        <Border x:Name="EqTreblePeak" Grid.Column="6" Height="1" Background="{StaticResource GreenPeak}" VerticalAlignment="Bottom" IsHitTestVisible="False" />
+                    </Grid>
+                    <!-- Labels -->
+                    <Grid Grid.Row="1" Margin="0,2,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="3" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="3" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Vol" FontSize="7" Foreground="{StaticResource WhiteSoft}" HorizontalAlignment="Center" />
+                        <TextBlock Grid.Column="2" Text="Bass" FontSize="8" Foreground="{StaticResource WhiteSoft}" HorizontalAlignment="Center" />
+                        <TextBlock Grid.Column="4" Text="Mid" FontSize="8" Foreground="{StaticResource WhiteSoft}" HorizontalAlignment="Center" />
+                        <TextBlock Grid.Column="6" Text="Treb" FontSize="8" Foreground="{StaticResource WhiteSoft}" HorizontalAlignment="Center" />
+                    </Grid>
+                    <!-- Direction indicator -->
+                    <Grid Grid.Row="3">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="L" FontSize="9" Foreground="{StaticResource WhiteDim}" VerticalAlignment="Center" Margin="0,0,3,0" />
+                        <Border Grid.Column="1" ClipToBounds="True">
+                            <Canvas x:Name="DirectionDotCanvas" />
+                        </Border>
+                        <TextBlock Grid.Column="2" Text="R" FontSize="9" Foreground="{StaticResource WhiteDim}" VerticalAlignment="Center" Margin="3,0,0,0" />
+                    </Grid>
+                </Grid>
+
+                <!-- History panel -->
+                <StackPanel x:Name="HistoryPanel" Visibility="Collapsed">
+                <!-- Volume -->
+                <Grid Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="36" />
+                        <ColumnDefinition Width="36" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Vol" Foreground="{DynamicResource CForeground2}" FontSize="10" VerticalAlignment="Center" />
+                    <TextBlock x:Name="VolumeValue" Grid.Column="1" Foreground="{DynamicResource CForeground1}" FontSize="10" FontFamily="Consolas" VerticalAlignment="Center" />
+                    <Border Grid.Column="2" Background="{StaticResource WhiteSubtle}" CornerRadius="2" Height="20" ClipToBounds="True">
+                        <Canvas x:Name="VolumeChart" />
+                    </Border>
+                </Grid>
+                <!-- Bass -->
+                <Grid Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="36" />
+                        <ColumnDefinition Width="36" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Bass" Foreground="{DynamicResource CForeground2}" FontSize="10" VerticalAlignment="Center" />
+                    <TextBlock x:Name="BassValue" Grid.Column="1" Foreground="{DynamicResource CForeground1}" FontSize="10" FontFamily="Consolas" VerticalAlignment="Center" />
+                    <Border Grid.Column="2" Background="{StaticResource WhiteSubtle}" CornerRadius="2" Height="20" ClipToBounds="True">
+                        <Canvas x:Name="BassChart" />
+                    </Border>
+                </Grid>
+                <!-- Mid -->
+                <Grid Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="36" />
+                        <ColumnDefinition Width="36" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Mid" Foreground="{DynamicResource CForeground2}" FontSize="10" VerticalAlignment="Center" />
+                    <TextBlock x:Name="MidValue" Grid.Column="1" Foreground="{DynamicResource CForeground1}" FontSize="10" FontFamily="Consolas" VerticalAlignment="Center" />
+                    <Border Grid.Column="2" Background="{StaticResource WhiteSubtle}" CornerRadius="2" Height="20" ClipToBounds="True">
+                        <Canvas x:Name="MidChart" />
+                    </Border>
+                </Grid>
+                <!-- Treble -->
+                <Grid Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="36" />
+                        <ColumnDefinition Width="36" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Treble" Foreground="{DynamicResource CForeground2}" FontSize="10" VerticalAlignment="Center" />
+                    <TextBlock x:Name="TrebleValue" Grid.Column="1" Foreground="{DynamicResource CForeground1}" FontSize="10" FontFamily="Consolas" VerticalAlignment="Center" />
+                    <Border Grid.Column="2" Background="{StaticResource WhiteSubtle}" CornerRadius="2" Height="20" ClipToBounds="True">
+                        <Canvas x:Name="TrebleChart" />
+                    </Border>
+                </Grid>
+                <!-- Direction -->
+                <Grid Margin="0,0,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="36" />
+                        <ColumnDefinition Width="36" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Dir" Foreground="{DynamicResource CForeground2}" FontSize="10" VerticalAlignment="Center" />
+                    <TextBlock x:Name="DirectionValue" Grid.Column="1" Foreground="{DynamicResource CForeground1}" FontSize="10" FontFamily="Consolas" VerticalAlignment="Center" />
+                    <Border Grid.Column="2" Background="{StaticResource WhiteSubtle}" CornerRadius="2" Height="20" ClipToBounds="True">
+                        <Canvas x:Name="DirectionChart" />
+                    </Border>
+                </Grid>
+            </StackPanel>
+            </Grid>
+        </StackPanel>
+    </Grid>
 </UserControl>
