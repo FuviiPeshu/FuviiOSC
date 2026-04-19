@@ -1,0 +1,85 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Color x:Key="PurpleColor">#6932DD</Color>
+    <Color x:Key="GoldColor">#F9C03C</Color>
+    <Color x:Key="CyanColor">#40C8E0</Color>
+    <Color x:Key="GreenColor">#40C070</Color>
+    <Color x:Key="OrangeColor">0xE66422</Color>
+    <!-- Semantic -->
+    <Color x:Key="DangerRedColor">#D32F2F</Color>
+    <Color x:Key="SuccessGreenColor">#388E3C</Color>
+    <Color x:Key="EditBlueColor">#1976D2</Color>
+    <!-- Neutrals -->
+    <Color x:Key="InactiveColor">#646464</Color>
+    <Color x:Key="DarkBgColor">#323232</Color>
+    <!-- Semi-transparent white helpers (ARGB) -->
+    <Color x:Key="WhiteSubtleColor">#16FFFFFF</Color>
+    <Color x:Key="WhiteDimColor">#64FFFFFF</Color>
+    <Color x:Key="WhiteSoftColor">#99FFFFFF</Color>
+    <!-- Half-opacity accent variants (ARGB) -->
+    <Color x:Key="PurplePeakColor">#806932DD</Color>
+    <Color x:Key="GoldPeakColor">#80F9C03C</Color>
+    <Color x:Key="CyanPeakColor">#8040C8E0</Color>
+    <Color x:Key="GreenPeakColor">#8040C070</Color>
+    <Color x:Key="PurpleFillColor">#666932DD</Color>
+    <!-- Brushes -->
+    <SolidColorBrush x:Key="PurpleAccent"      Color="{StaticResource PurpleColor}" />
+    <SolidColorBrush x:Key="GoldAccent"         Color="{StaticResource GoldColor}" />
+    <SolidColorBrush x:Key="CyanAccent"         Color="{StaticResource CyanColor}" />
+    <SolidColorBrush x:Key="GreenAccent"        Color="{StaticResource GreenColor}" />
+    <SolidColorBrush x:Key="OrangeAccent"       Color="{StaticResource OrangeColor}" />
+    <SolidColorBrush x:Key="Inactive"           Color="{StaticResource InactiveColor}" />
+    <SolidColorBrush x:Key="DarkBg"             Color="{StaticResource DarkBgColor}" />
+    <SolidColorBrush x:Key="DangerRedBrush"     Color="{StaticResource DangerRedColor}" />
+    <SolidColorBrush x:Key="SuccessGreenBrush"  Color="{StaticResource SuccessGreenColor}" />
+    <SolidColorBrush x:Key="EditBlueBrush"      Color="{StaticResource EditBlueColor}" />
+    <SolidColorBrush x:Key="WhiteSubtle"        Color="{StaticResource WhiteSubtleColor}" />
+    <SolidColorBrush x:Key="WhiteDim"           Color="{StaticResource WhiteDimColor}" />
+    <SolidColorBrush x:Key="WhiteSoft"          Color="{StaticResource WhiteSoftColor}" />
+    <SolidColorBrush x:Key="PurplePeak"         Color="{StaticResource PurplePeakColor}" />
+    <SolidColorBrush x:Key="GoldPeak"           Color="{StaticResource GoldPeakColor}" />
+    <SolidColorBrush x:Key="CyanPeak"           Color="{StaticResource CyanPeakColor}" />
+    <SolidColorBrush x:Key="GreenPeak"          Color="{StaticResource GreenPeakColor}" />
+    <SolidColorBrush x:Key="PurpleFill"         Color="{StaticResource PurpleFillColor}" />
+
+    <!-- Dividers -->
+    <Style x:Key="VerticalDivider" TargetType="Rectangle">
+        <Setter Property="Width" Value="2" />
+        <Setter Property="Fill" Value="{StaticResource Inactive}" />
+        <Setter Property="Opacity" Value="0.3" />
+        <Setter Property="RadiusX" Value="1" />
+        <Setter Property="RadiusY" Value="1" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+    </Style>
+    <Style x:Key="HorizontalDivider" TargetType="Rectangle">
+        <Setter Property="Height" Value="2" />
+        <Setter Property="Fill" Value="{StaticResource Inactive}" />
+        <Setter Property="Opacity" Value="0.3" />
+        <Setter Property="RadiusX" Value="1" />
+        <Setter Property="RadiusY" Value="1" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+    </Style>
+
+    <!-- Buttons -->
+    <Style x:Key="RemoveButton" TargetType="Button">
+        <Setter Property="Content" Value="-" />
+        <Setter Property="Background" Value="{StaticResource DangerRedBrush}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Width" Value="25" />
+        <Setter Property="Height" Value="25" />
+        <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <Style x:Key="AddButton" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource SuccessGreenBrush}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Width" Value="100" />
+        <Setter Property="Height" Value="25" />
+        <Setter Property="Margin" Value="0,5" />
+    </Style>
+    <Style x:Key="EditButton" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource EditBlueBrush}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Width" Value="50" />
+        <Setter Property="Height" Value="25" />
+        <Setter Property="Margin" Value="5,0" />
+    </Style>
+</ResourceDictionary>
