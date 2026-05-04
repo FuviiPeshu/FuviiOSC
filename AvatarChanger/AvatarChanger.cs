@@ -7,7 +7,7 @@ using VRCOSC.App.SDK.Parameters;
 namespace FuviiOSC.AvatarChanger;
 
 [ModuleTitle("Avatar Changer")]
-[ModuleDescription("Handles avatar change via OSC (IMPORTANT NOTE: Works only for favourited avatars until VRChat fixes the bug)")]
+[ModuleDescription("Handles avatar change via OSC.")]
 [ModuleType(ModuleType.Generic)]
 public class AvatarChangerModule : Module
 {

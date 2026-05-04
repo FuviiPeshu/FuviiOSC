@@ -65,9 +65,9 @@
                                         </Border.Background>
                                         <Grid>
                                             <queryableParameter:QueryableParameterView QueryableParameter="{Binding}"/>
-                                            <Button Grid.Column="1" Content="-" Background="#FFD32F2F" Foreground="White"
+                                            <Button Grid.Column="1" Style="{StaticResource RemoveButton}"
                                                     Click="RemoveButton_OnClick" Height="30" Width="30" Tag="{Binding}" 
-                                                    FontWeight="Bold" HorizontalAlignment="Right" />
+                                                    HorizontalAlignment="Right" />
                                         </Grid>
                                     </Border>
                                 </ControlTemplate>
@@ -78,8 +78,7 @@
             </ListView>
             
             <Border Grid.Row="2" Background="{DynamicResource CBackground1}" Margin="0 10 0 0">
-                <Button Content="Add Parameter" Width="120" Height="25" Margin="0 5" Click="AddButton_OnClick" 
-                        Background="#FF388E3C" Foreground="White" />
+                <Button Content="Add Parameter" Style="{StaticResource AddButton}" Width="120" Click="AddButton_OnClick" />
             </Border>
         </Grid>
     </Border>

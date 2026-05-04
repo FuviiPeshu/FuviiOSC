@@ -55,7 +55,7 @@
 													<xctk:DoubleUpDown Value="{Binding PatternConfig.Speed, Mode=TwoWay}" Minimum="0.01" Maximum="4" Increment="0.01" FormatString="F2" Width="64" FontSize="14" />
 												</StackPanel>
 											</StackPanel>
-											<Button Grid.Column="2" Content="-" Background="#FFD32F2F" Foreground="White" Width="25" Height="25" Margin="0,0,4,0" Click="RemoveDeviceButton_OnClick" Tag="{Binding}" FontWeight="Bold" />
+											<Button Grid.Column="2" Style="{StaticResource RemoveButton}" Margin="0,0,4,0" Click="RemoveDeviceButton_OnClick" Tag="{Binding}" />
 										</Grid>
 									</Border>
 								</ControlTemplate>
@@ -67,11 +67,7 @@
 			<Border Background="{DynamicResource CBackground1}">
 				<Button
 					Content="Add Device"
-					Background="#FF388E3C"
-					Foreground="White"
-					Width="100"
-					Height="25"
-					Margin="0 5"
+					Style="{StaticResource AddButton}"
 					Click="AddDeviceButton_OnClick" />
 			</Border>
 		</StackPanel>

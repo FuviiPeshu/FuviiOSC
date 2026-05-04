@@ -5,6 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     mc:Ignorable="d"
     Loaded="AvatarChangerModuleSettingView_OnLoaded">
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -38,8 +39,8 @@
                                         TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
                                         FontSize="16" FontWeight="Regular" VerticalAlignment="Center" TextAlignment="Left" />
                                     <StackPanel Grid.Column="2" Orientation="Horizontal" FlowDirection="RightToLeft" Margin="8 0">
-                                        <Button Content="Edit" Background="#FF1976D2" Foreground="White" Width="50" Height="25" Margin="5 0" Click="EditInstanceButton_OnClick" Tag="{Binding}" />
-                                        <Button Content="-" Background="#FFD32F2F" Foreground="White" Width="25" Height="25" Margin="0 0 5 0" Click="RemoveInstanceButton_OnClick" Tag="{Binding}" FontWeight="Bold" />
+                                        <Button Content="Edit" Style="{StaticResource EditButton}" Click="EditInstanceButton_OnClick" Tag="{Binding}" />
+                                        <Button Style="{StaticResource RemoveButton}" Margin="0 0 5 0" Click="RemoveInstanceButton_OnClick" Tag="{Binding}" />
                                     </StackPanel>
                                 </Grid>
                             </Border>
@@ -53,11 +54,7 @@
         <Border Grid.Row="2" Background="{StaticResource CBackground1}">
             <Button
                 Content="Add Trigger"
-                Background="#FF388E3C"
-                Foreground="White"
-                Width="100"
-                Height="25"
-                Margin="0 5"
+                Style="{StaticResource AddButton}"
                 Click="AddInstanceButton_OnClick" />
         </Border>
     </Grid>

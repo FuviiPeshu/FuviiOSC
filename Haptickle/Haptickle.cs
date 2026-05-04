@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -12,19 +13,22 @@ using VRCOSC.App.SDK.Parameters.Queryable;
 namespace FuviiOSC.Haptickle;
 
 [ModuleTitle("Haptickle")]
-[ModuleDescription("Triggers Vive tracker haptics (if vibration motor is attached) or external haptic devices based on avatar parameters")]
+[ModuleDescription(
+    "\t        --- Note: SteamVR devices have to be configured in the 'Run' tab.\n" +
+    "Triggers Vive tracker haptics (if vibration motor is attached) or external haptic devices based on avatar parameters"
+)]
 [ModuleType(ModuleType.Generic)]
 public class HaptickleModule : Module
 {
-    private readonly Dictionary<string, CancellationTokenSource> _pulseTokens = new();
-    private readonly Dictionary<string, CancellationTokenSource> _externalPulseTokens = new();
-    private readonly Dictionary<string, float> _lastFloatValues = new();
-    private readonly Dictionary<string, float> _lastTriggerValues = new();
-    private readonly Dictionary<string, float> _lastTriggerDeltas = new();
-    private readonly Dictionary<string, DateTime> _triggerStartTimes = new();
-    private readonly Dictionary<string, DateTime> _lastValueTimestamps = new();
+    private readonly ConcurrentDictionary<string, CancellationTokenSource> _pulseTokens = new();
+    private readonly ConcurrentDictionary<string, CancellationTokenSource> _externalPulseTokens = new();
+    private readonly ConcurrentDictionary<string, float> _lastFloatValues = new();
+    private readonly ConcurrentDictionary<string, float> _lastTriggerValues = new();
+    private readonly ConcurrentDictionary<string, float> _lastTriggerDeltas = new();
+    private readonly ConcurrentDictionary<string, DateTime> _triggerStartTimes = new();
+    private readonly ConcurrentDictionary<string, DateTime> _lastValueTimestamps = new();
     // Workaround: Track validity state for each trigger/parameter (bug with not keeping isValid when value conditions are met and maintained)
-    private readonly Dictionary<string, bool> _parameterValidStates = new();
+    private readonly ConcurrentDictionary<string, bool> _parameterValidStates = new();
 
     private const ushort _MIN_HAPTIC_PULSE_DURATION = 20, _MAX_HAPTIC_PULSE_DURATION = 80, _DEFAULT_PULSE_INTERVAL = 32, _TRACKER_HAPTIC_AXIS_ID = 1, _DEFAULT_DELAY = 420;
     private const float _MIN_MARGIN = 0.02f, _VELOCITY_TIME_SCALAR = 0.1f;
@@ -294,10 +298,9 @@ public class HaptickleModule : Module
     public void StopPulseLoop(HapticTrigger trigger)
     {
         string key = trigger.DeviceSerialNumber;
-        if (_pulseTokens.TryGetValue(key, out CancellationTokenSource? pulseToken))
+        if (_pulseTokens.TryRemove(key, out CancellationTokenSource? pulseToken))
         {
             pulseToken.Cancel();
-            _pulseTokens.Remove(key);
         }
         UpdateActiveState();
     }
@@ -372,10 +375,9 @@ public class HaptickleModule : Module
 
     private void StopExternalPatternLoop(DeviceMapping mapping)
     {
-        if (_externalPulseTokens.TryGetValue(mapping.DeviceIp, out var token))
+        if (_externalPulseTokens.TryRemove(mapping.DeviceIp, out var token))
         {
             token.Cancel();
-            _externalPulseTokens.Remove(mapping.DeviceIp);
         }
 
         UpdateActiveState();
