@@ -14,7 +14,10 @@
         <common:InverseBooleanConverter x:Key="InverseBooleanConverter" />
         <common:NonEmptyStringToVisibilityConverter x:Key="NonEmptyStringToVisibilityConverter" />
     </UserControl.Resources>
-    <GroupBox Header="Device List" Visibility="{Binding Trackers.Count, Converter={StaticResource AllButFirstToVisibilityConverter}}" Foreground="{DynamicResource CForeground1}" Margin="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalAlignment="Center" VerticalContentAlignment="Center">
+    <Grid Margin="8">
+        <common:FuviiHeader/>
+        
+        <GroupBox Header="Device List" Visibility="{Binding Trackers.Count, Converter={StaticResource AllButFirstToVisibilityConverter}}" Foreground="{DynamicResource CForeground1}" Margin="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalAlignment="Center" VerticalContentAlignment="Center">
         <ListView ItemsSource="{Binding Trackers}" Background="{DynamicResource CBackground2}" Padding="0" Margin="0" BorderThickness="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalAlignment="Center" VerticalContentAlignment="Center" AlternationCount="1000">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
@@ -225,4 +228,5 @@
             </ListView.ItemTemplate>
         </ListView>
     </GroupBox>
+    </Grid>
 </UserControl>

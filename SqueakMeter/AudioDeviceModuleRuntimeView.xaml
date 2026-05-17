@@ -10,12 +10,14 @@
         <common:AllButFirstToVisibilityConverter x:Key="AllButFirstToVisibilityConverter" />
         <common:NonEmptyStringToVisibilityConverter x:Key="NonEmptyStringToVisibilityConverter" />
     </UserControl.Resources>
-    <Grid>
+    <Grid Margin="8">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" MinWidth="200" />
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="240" />
         </Grid.ColumnDefinitions>
+
+        <common:FuviiHeader/>
 
         <!-- Left: Device selection & disabled list -->
         <StackPanel Grid.Column="0" Margin="0,0,8,0">
