@@ -309,7 +309,7 @@ public class HaptickleModule : Module
     {
         StopExternalPatternLoop(mapping);
 
-        var tokenSource = new CancellationTokenSource();
+        CancellationTokenSource tokenSource = new();
         _externalPulseTokens[mapping.DeviceIp] = tokenSource;
 
         UpdateActiveState();
@@ -344,7 +344,7 @@ public class HaptickleModule : Module
                     }
                 }
 
-                var patternConfig = mapping.PatternConfig ?? new VibrationPatternConfig();
+                VibrationPatternConfig patternConfig = mapping.PatternConfig ?? new VibrationPatternConfig();
                 float patterned = 0.0f;
                 switch (mode)
                 {
@@ -375,7 +375,7 @@ public class HaptickleModule : Module
 
     private void StopExternalPatternLoop(DeviceMapping mapping)
     {
-        if (_externalPulseTokens.TryRemove(mapping.DeviceIp, out var token))
+        if (_externalPulseTokens.TryRemove(mapping.DeviceIp, out CancellationTokenSource? token))
         {
             token.Cancel();
         }

@@ -165,7 +165,7 @@ public static class HaptickleUtils
 
     public static void SendOscMessage(string ip, int port, string address, int value)
     {
-        var msg = new List<byte>();
+        List<byte> msg = new();
 
         // OSC Address (null-padded to 4-byte boundary)
         byte[] addrBytes = Encoding.ASCII.GetBytes(address);

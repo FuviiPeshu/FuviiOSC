@@ -43,14 +43,13 @@ public class SqueakMeterModule : Module
     // Constants
     private const int VOLUME_BOOST_FACTOR = 8;
     private const float PARAMETER_CHANGE_THRESHOLD = 0.001f;
-
-    // Public accessors for runtime view
+    // Public properties for runtime view
     public float CurrentVolume => _volume;
     public float CurrentBass => _bassSmoothed;
     public float CurrentMid => _midSmoothed;
     public float CurrentTreble => _trebleSmoothed;
     public float CurrentDirection => _direction;
-
+    // Audio capture fields
     public AudioDeviceNotificationClient? notificationClient = new AudioDeviceNotificationClient();
     public readonly MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
     public MMDevice? activeDevice;

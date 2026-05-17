@@ -32,7 +32,7 @@ public static class SqueakMeterUtils
         int samples = Math.Min(bytesRecorded / BYTES_PER_SAMPLE, FFT_LENGTH * CHANNELS);
 
         // Prepare FFT buffer (average left and right channels)
-        var fftBuffer = new Complex[FFT_LENGTH];
+        Complex[] fftBuffer = new Complex[FFT_LENGTH];
         PrepareFFTBuffer(buffer, fftBuffer, samples);
 
         // Perform FFT

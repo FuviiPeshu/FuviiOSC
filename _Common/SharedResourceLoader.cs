@@ -18,7 +18,7 @@ internal static class SharedResourceLoader
 
         if (Application.Current is null) return;
 
-        var dict = new ResourceDictionary
+        ResourceDictionary dict = new()
         {
             Source = new Uri("/FuviiOSC;component/_Common/FuviiStyles.xaml", UriKind.Relative)
         };

@@ -38,7 +38,7 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
     public ObservableCollection<AudioDeviceInfo> AudioDevices { get; } = new();
     public Observable<string> SelectedDeviceId { get; set; } = new();
 
-    private bool suppressSelectionChanged = false;
+    private bool suppressSelectionChanged;
     private string? _errorMessage;
     public string? ErrorMessage
     {
@@ -83,6 +83,13 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
     // Toggle state (true = Frequencies, false = History)
     private bool _showFrequencies = true;
 
+    // Reusable sparkline elements (avoid GDI handle leak from creating new visuals every tick)
+    private readonly Dictionary<Canvas, (Polyline Polyline, Line? CenterLine)> _sparklineElements = new();
+    // Reusable direction dot elements
+    private Line? _dirTrackLine;
+    private Line? _dirCenterLine;
+    private Ellipse? _dirDot;
+
     public AudioDeviceModuleRuntimeView(SqueakMeterModule module)
     {
         InitializeComponent();
@@ -97,6 +104,8 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
         Module.notificationClient.DeviceError += DeviceErrorOccurred;
         UpdateDeviceList();
 
+        InitDirectionDot();
+
         _chartTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(ChartIntervalMs) };
         _chartTimer.Tick += (_, _) => UpdateCharts();
         _chartTimer.Start();
@@ -105,7 +114,9 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
     public void DeviceErrorOccurred(string deviceId, string errorMessage)
     {
         AudioDeviceInfo? device = AudioDevices.First(d => d.ID == deviceId);
-        if (device != null && !DisabledDevices.Any(device => device.ID == deviceId))
+        if (device == null) return;
+
+        if (!DisabledDevices.Any(d => d.ID == deviceId))
         {
             int index = AudioDevices.IndexOf(device);
             AudioDevices[index] = device with { IsEnabled = false };
@@ -151,10 +162,8 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
                 return;
             }
 
-            // Save the current selection
             string previousSelectedId = Module.selectedDevice?.ID ?? SelectedDeviceId.Value;
 
-            // Update UI with the new list of devices
             suppressSelectionChanged = true;
             SelectedDeviceId.Value = String.Empty;
             AudioDevices.Clear();
@@ -164,7 +173,7 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
                 AudioDevices.Add(new AudioDeviceInfo(device.ID, device.FriendlyName, isEnabled));
             }
 
-            // Reset audio device to the first device if selected audio device is no longer available
+            // Fallback to first device if current selection is no longer available
             if (Module.activeDevice == null || !audioDevices.Any(d => d.ID == previousSelectedId))
             {
                 Module.SetCaptureDevice(audioDevices[0].ID);
@@ -185,8 +194,7 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
 
     private void DeviceSelection_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (suppressSelectionChanged)
-            return;
+        if (suppressSelectionChanged) return;
 
         if (!Dispatcher.CheckAccess())
         {
@@ -288,47 +296,44 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
         EqTreblePeak.Margin = new Thickness(0, 0, 0, _peakTreble * maxH);
     }
 
+    private void InitDirectionDot()
+    {
+        _dirTrackLine = new Line { Stroke = FuviiStyles.GridLineBrush, StrokeThickness = 1 };
+        _dirCenterLine = new Line { Stroke = FuviiStyles.WhiteSubtleBrush, StrokeThickness = 1 };
+        _dirDot = new Ellipse { Width = 10, Height = 10, Fill = FuviiStyles.OrangeBrush };
+
+        DirectionDotCanvas.Children.Add(_dirTrackLine);
+        DirectionDotCanvas.Children.Add(_dirCenterLine);
+        DirectionDotCanvas.Children.Add(_dirDot);
+    }
+
     private void DrawDirectionDot()
     {
-        DirectionDotCanvas.Children.Clear();
         double w = DirectionDotCanvas.ActualWidth;
         double h = DirectionDotCanvas.ActualHeight;
         if (w < 4 || h < 4) return;
 
-        Line? track = new Line
-        {
-            X1 = 0,
-            X2 = w,
-            Y1 = h / 2,
-            Y2 = h / 2,
-            Stroke = FuviiStyles.GridLineBrush,
-            StrokeThickness = 1
-        };
-        DirectionDotCanvas.Children.Add(track);
+        _dirTrackLine!.X1 = 0;
+        _dirTrackLine.X2 = w;
+        _dirTrackLine.Y1 = h / 2;
+        _dirTrackLine.Y2 = h / 2;
 
-        Line? center = new Line
-        {
-            X1 = w / 2,
-            X2 = w / 2,
-            Y1 = 2,
-            Y2 = h - 2,
-            Stroke = FuviiStyles.WhiteSubtleBrush,
-            StrokeThickness = 1
-        };
-        DirectionDotCanvas.Children.Add(center);
+        _dirCenterLine!.X1 = w / 2;
+        _dirCenterLine.X2 = w / 2;
+        _dirCenterLine.Y1 = 2;
+        _dirCenterLine.Y2 = h - 2;
 
         float dir = Math.Clamp(Module.CurrentDirection, 0f, 1f);
         double dotX = dir * w;
         const double dotR = 5;
-        Ellipse? dot = new Ellipse { Width = dotR * 2, Height = dotR * 2, Fill = FuviiStyles.OrangeBrush };
-        Canvas.SetLeft(dot, dotX - dotR);
-        Canvas.SetTop(dot, h / 2 - dotR);
-        DirectionDotCanvas.Children.Add(dot);
+        Canvas.SetLeft(_dirDot, dotX - dotR);
+        Canvas.SetTop(_dirDot, h / 2 - dotR);
     }
 
     private void Toggle_Frequencies(object sender, MouseButtonEventArgs e)
     {
         if (_showFrequencies) return;
+
         _showFrequencies = true;
 
         FrequenciesPanel.Visibility = Visibility.Visible;
@@ -341,7 +346,7 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
         ToggleHistLabel.Foreground = FuviiStyles.WhiteSoftBrush;
         ToggleHistLabel.FontWeight = FontWeights.Normal;
 
-        DoubleAnimation? anim = new DoubleAnimation
+        DoubleAnimation anim = new()
         {
             To = 0,
             Duration = TimeSpan.FromMilliseconds(200),
@@ -353,6 +358,7 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
     private void Toggle_History(object sender, MouseButtonEventArgs e)
     {
         if (!_showFrequencies) return;
+
         _showFrequencies = false;
 
         FrequenciesPanel.Visibility = Visibility.Collapsed;
@@ -366,7 +372,7 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
         ToggleHistLabel.FontWeight = FontWeights.SemiBold;
 
         double halfWidth = ToggleGrid.ActualWidth / 2;
-        DoubleAnimation? anim = new DoubleAnimation
+        DoubleAnimation anim = new()
         {
             To = halfWidth,
             Duration = TimeSpan.FromMilliseconds(200),
@@ -412,40 +418,59 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
         Array.Clear(_directionHistory);
     }
 
-    private void DrawSparkline(Canvas canvas, float[] history, int currentIndex, int historySize, Brush stroke, bool centerLine = false)
+    private (Polyline Polyline, Line? CenterLine) GetOrCreateSparkline(Canvas canvas, Brush stroke, bool centerLine)
     {
-        canvas.Children.Clear();
-        double w = canvas.ActualWidth;
-        double h = canvas.ActualHeight;
-        if (w < 2 || h < 2 || historySize < 2) return;
+        if (_sparklineElements.TryGetValue(canvas, out (Polyline Polyline, Line? CenterLine) existing))
+            return existing;
 
-        double baseline = centerLine ? h / 2 : h;
-
+        Line? line = null;
         if (centerLine)
         {
-            Line line = new Line
-            {
-                X1 = 0,
-                X2 = w,
-                Y1 = h / 2,
-                Y2 = h / 2,
-                Stroke = FuviiStyles.GridLineBrush,
-                StrokeThickness = 1
-            };
+            line = new Line { Stroke = FuviiStyles.GridLineBrush, StrokeThickness = 1 };
             canvas.Children.Add(line);
         }
 
-        Polyline polyline = new Polyline
+        Polyline polyline = new()
         {
             Stroke = stroke,
             StrokeThickness = 1.2,
             StrokeLineJoin = PenLineJoin.Round
         };
-        // Always draw full historySize points across the full width.
+        canvas.Children.Add(polyline);
+
+        (Polyline, Line?) entry = (polyline, line);
+        _sparklineElements[canvas] = entry;
+        return entry;
+    }
+
+    private void DrawSparkline(Canvas canvas, float[] history, int currentIndex, int historySize, Brush stroke, bool centerLine = false)
+    {
+        double w = canvas.ActualWidth;
+        double h = canvas.ActualHeight;
+        if (w < 2 || h < 2 || historySize < 2) return;
+
+        (Polyline polyline, Line? line) = GetOrCreateSparkline(canvas, stroke, centerLine);
+
+        if (line != null)
+        {
+            line.X1 = 0;
+            line.X2 = w;
+            line.Y1 = h / 2;
+            line.Y2 = h / 2;
+        }
+
+        double baseline = centerLine ? h / 2 : h;
+
+        PointCollection points = polyline.Points;
         int filled = _historyFilled;
         int startSlot = historySize - filled;
         int dataStart = (currentIndex - filled + historySize) % historySize;
         double stepX = w / (historySize - 1);
+
+        while (points.Count > historySize)
+            points.RemoveAt(points.Count - 1);
+        while (points.Count < historySize)
+            points.Add(new Point());
 
         for (int i = 0; i < historySize; i++)
         {
@@ -461,9 +486,7 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
                 float val = Math.Clamp(history[idx], 0f, 1f);
                 y = h - (val * h);
             }
-            polyline.Points.Add(new Point(x, y));
+            points[i] = new Point(x, y);
         }
-
-        canvas.Children.Add(polyline);
     }
 }
