@@ -1,0 +1,25 @@
+<UserControl x:Class="FuviiOSC.Common.FuviiHeader"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    mc:Ignorable="d"
+    IsHitTestVisible="False">
+    <Grid>
+        <Path x:Name="BackgroundPath"/>
+        <Canvas ClipToBounds="False">
+            <Image x:Name="WatermarkImage"
+                Source="pack://application:,,,/FuviiOSC;component/_Common/FuviiLogo.png"
+                Opacity="0.0032"
+                Stretch="Uniform"
+                RenderOptions.BitmapScalingMode="HighQuality"/>
+        </Canvas>
+        <Image x:Name="LogoImage"
+            Source="pack://application:,,,/FuviiOSC;component/_Common/FuviiLogo.png"
+            Width="40" Height="40"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            Margin="4,2,0,0"
+            RenderOptions.BitmapScalingMode="HighQuality"/>
+    </Grid>
+</UserControl>

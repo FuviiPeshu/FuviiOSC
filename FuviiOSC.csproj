@@ -17,6 +17,10 @@
 	  <Page Remove="VRCOSC-main\**" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Resource Include="_Common\FuviiLogo.png" />
+	</ItemGroup>
+
 
 	<ItemGroup>
 		<PackageReference Include="VolcanicArts.VRCOSC.SDK" Version="2025.1120.0" />
