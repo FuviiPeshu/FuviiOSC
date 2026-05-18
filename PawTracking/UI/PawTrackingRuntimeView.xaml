@@ -1,0 +1,421 @@
+<UserControl x:Class="FuviiOSC.PawTracking.UI.PawTrackingRuntimeView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:common="clr-namespace:FuviiOSC.Common"
+    mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <Style x:Key="PurpleBar" TargetType="ProgressBar">
+            <Setter Property="Height" Value="10"/>
+            <Setter Property="Minimum" Value="0"/>
+            <Setter Property="Maximum" Value="1"/>
+            <Setter Property="Background" Value="{StaticResource DarkBg}"/>
+            <Setter Property="Foreground" Value="{StaticResource PurpleAccent}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
+        <Style x:Key="Lbl" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource CForeground2}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="11"/>
+        </Style>
+
+        <Style x:Key="Val" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource CForeground2}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="Width" Value="26"/>
+        </Style>
+
+        <Style x:Key="BtnIcon" TargetType="Border">
+            <Setter Property="Width" Value="26"/>
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="CornerRadius" Value="13"/>
+            <Setter Property="Background" Value="{StaticResource DarkBg}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Inactive}"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+        </Style>
+
+        <Style x:Key="BtnLbl" TargetType="TextBlock">
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{StaticResource Inactive}"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="8">
+        <common:FuviiHeader/>
+
+        <StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- #region Left Hand -->
+                <StackPanel x:Name="LeftHandPanel" Grid.Column="0" Margin="0,0,4,0">
+                    <TextBlock Text="Left" FontWeight="Bold" FontSize="13"
+                            Foreground="{DynamicResource CForeground1}" Margin="0,0,0,4"
+                            HorizontalAlignment="Center"/>
+                    <!-- Header + Gesture icon -->
+                    <Grid Margin="0,0,0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="48"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="16"/>
+                                    <RowDefinition Height="16"/>
+                                    <RowDefinition Height="16"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="Gesture" Grid.Row="0" Style="{StaticResource Lbl}"/>
+                                <TextBlock x:Name="LeftGestureText" Grid.Row="0" Grid.Column="1" Text="—"
+                                        Foreground="{DynamicResource CForeground1}" FontWeight="SemiBold" FontSize="11"
+                                        VerticalAlignment="Center"/>
+                                <TextBlock Text="Weight" Grid.Row="1" Style="{StaticResource Lbl}"/>
+                                <TextBlock x:Name="LeftWeightText" Grid.Row="1" Grid.Column="1" Text="—"
+                                        FontSize="11" Foreground="{DynamicResource CForeground1}" VerticalAlignment="Center"/>
+                                <TextBlock Text="Closest" Grid.Row="2" Style="{StaticResource Lbl}"/>
+                                <TextBlock x:Name="LeftClosestText" Grid.Row="2" Grid.Column="1" Text="—"
+                                        FontSize="11" Foreground="{DynamicResource CForeground1}" VerticalAlignment="Center"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Gesture icon (flipped for left hand) -->
+                        <Viewbox Grid.Column="1" Width="40" Height="48" Margin="4,0,0,0"
+                                VerticalAlignment="Center" Stretch="Uniform">
+                            <Path x:Name="LeftGestureIcon" Fill="{StaticResource Inactive}"
+                                Stretch="Uniform">
+                                <Path.LayoutTransform>
+                                    <ScaleTransform ScaleX="-1" ScaleY="1"/>
+                                </Path.LayoutTransform>
+                            </Path>
+                        </Viewbox>
+                    </Grid>
+
+                    <!-- Finger bars -->
+                    <Grid Margin="0,0,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="40"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="26"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="16"/>
+                            <RowDefinition Height="16"/>
+                            <RowDefinition Height="16"/>
+                            <RowDefinition Height="16"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Index" Grid.Row="0" Style="{StaticResource Lbl}"/>
+                        <ProgressBar x:Name="LeftIndexBar" Grid.Row="0" Grid.Column="1" Style="{StaticResource PurpleBar}" Margin="4,2,8,0"/>
+                        <TextBlock x:Name="LeftIndexText" Grid.Row="0" Grid.Column="2" Style="{StaticResource Val}"/>
+                        <TextBlock Text="Middle" Grid.Row="1" Style="{StaticResource Lbl}"/>
+                        <ProgressBar x:Name="LeftMiddleBar" Grid.Row="1" Grid.Column="1" Style="{StaticResource PurpleBar}" Margin="4,2,8,0"/>
+                        <TextBlock x:Name="LeftMiddleText" Grid.Row="1" Grid.Column="2" Style="{StaticResource Val}"/>
+                        <TextBlock Text="Ring" Grid.Row="2" Style="{StaticResource Lbl}"/>
+                        <ProgressBar x:Name="LeftRingBar" Grid.Row="2" Grid.Column="1" Style="{StaticResource PurpleBar}" Margin="4,2,8,0"/>
+                        <TextBlock x:Name="LeftRingText" Grid.Row="2" Grid.Column="2" Style="{StaticResource Val}"/>
+                        <TextBlock Text="Pinky" Grid.Row="3" Style="{StaticResource Lbl}"/>
+                        <ProgressBar x:Name="LeftPinkyBar" Grid.Row="3" Grid.Column="1" Style="{StaticResource PurpleBar}" Margin="4,2,8,0"/>
+                        <TextBlock x:Name="LeftPinkyText" Grid.Row="3" Grid.Column="2" Style="{StaticResource Val}"/>
+                    </Grid>
+
+                    <!-- Controls: B/A | Trigger | Grip | Stick | Pad -->
+                    <Grid Margin="0,0,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Row="0" Grid.RowSpan="3" Grid.Column="0" VerticalAlignment="Center">
+                            <Border x:Name="LeftBBtn" Style="{StaticResource BtnIcon}" Margin="0,2,0,0">
+                                <TextBlock x:Name="LeftBLbl" Text="B" Style="{StaticResource BtnLbl}"/>
+                            </Border>
+                            <Border x:Name="LeftABtn" Style="{StaticResource BtnIcon}" Margin="0,8,0,0">
+                                <TextBlock x:Name="LeftALbl" Text="A" Style="{StaticResource BtnLbl}"/>
+                            </Border>
+                        </StackPanel>
+
+                        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="2" VerticalAlignment="Bottom"
+                                x:Name="LeftTriggerBorder" Width="20" Height="52"
+                                CornerRadius="8,8,3,3" Background="{StaticResource DarkBg}"
+                                BorderBrush="{StaticResource Inactive}" BorderThickness="1.5">
+                            <Grid>
+                                <Border x:Name="LeftTriggerFill" CornerRadius="5,5,1,1" Height="0" Margin="1,2,2,1"
+                                        Background="{StaticResource Inactive}" VerticalAlignment="Bottom"/>
+                                <TextBlock x:Name="LeftTriggerLbl" Text="Trigger" FontSize="8" FontWeight="SemiBold"
+                                        Foreground="{StaticResource Inactive}" Opacity="0.8"
+                                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock.LayoutTransform>
+                                        <RotateTransform Angle="-90"/>
+                                    </TextBlock.LayoutTransform>
+                                </TextBlock>
+                            </Grid>
+                        </Border>
+                        <TextBlock Grid.Row="2" Grid.Column="2" x:Name="LeftTriggerVal" Text="0.00" FontSize="10"
+                                Foreground="{DynamicResource CForeground2}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+
+                        <TextBlock Grid.Row="0" Grid.Column="4" x:Name="LeftGripPullVal" Text="0.00" FontSize="10"
+                                Foreground="{DynamicResource CForeground2}" HorizontalAlignment="Center" Margin="0,0,0,2"/>
+                        <Border Grid.Row="1" Grid.Column="4" VerticalAlignment="Center"
+                                x:Name="LeftGripBorder" Width="26" Height="46"
+                                CornerRadius="10" Background="{StaticResource DarkBg}"
+                                BorderBrush="{StaticResource Inactive}" BorderThickness="1.5">
+                            <Grid>
+                                <Border x:Name="LeftGripFill" CornerRadius="7" Height="0" Margin="2,2,1,1"
+                                        Background="{StaticResource Inactive}" VerticalAlignment="Bottom"/>
+                                <Border x:Name="LeftGripForceFill" CornerRadius="7" Height="0" Margin="2,2,1,1"
+                                        Background="{StaticResource GoldAccent}" VerticalAlignment="Bottom"/>
+                                <TextBlock x:Name="LeftGripLbl" Text="Grip" FontSize="8" FontWeight="SemiBold"
+                                        Foreground="{StaticResource Inactive}" Opacity="0.8"
+                                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock.LayoutTransform>
+                                        <RotateTransform Angle="-90"/>
+                                    </TextBlock.LayoutTransform>
+                                </TextBlock>
+                            </Grid>
+                        </Border>
+                        <TextBlock Grid.Row="2" Grid.Column="4" x:Name="LeftGripVal" Text="0.00" FontSize="10"
+                                Foreground="{DynamicResource CForeground2}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+
+                        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="6" VerticalAlignment="Bottom"
+                                x:Name="LeftStickBorder" Width="48" Height="48" CornerRadius="24"
+                                Background="{StaticResource DarkBg}" BorderBrush="{StaticResource Inactive}" BorderThickness="1.5">
+                            <Canvas Width="48" Height="48" ClipToBounds="True">
+                                <Ellipse x:Name="LeftStickDot" Width="12" Height="12" Fill="{StaticResource Inactive}"
+                                        Canvas.Left="18" Canvas.Top="18"/>
+                            </Canvas>
+                        </Border>
+                        <TextBlock Grid.Row="2" Grid.Column="6" x:Name="LeftStickCoord" Text="0.00, 0.00" FontSize="9"
+                                Foreground="{DynamicResource CForeground2}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+
+                        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="8" VerticalAlignment="Bottom"
+                                x:Name="LeftPadBorder" Width="48" Height="48" CornerRadius="4"
+                                Background="{StaticResource DarkBg}" BorderBrush="{StaticResource Inactive}" BorderThickness="1.5">
+                            <Canvas Width="48" Height="48" ClipToBounds="True">
+                                <Ellipse x:Name="LeftPadDot" Width="10" Height="10" Fill="{StaticResource Inactive}"
+                                        Canvas.Left="19" Canvas.Top="19"/>
+                            </Canvas>
+                        </Border>
+                        <TextBlock Grid.Row="2" Grid.Column="8" x:Name="LeftPadCoord" Text="0.00, 0.00" FontSize="9"
+                                Foreground="{DynamicResource CForeground2}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                    </Grid>
+                </StackPanel>
+                <!--#endregion-->
+
+                <!-- #region Trackers -->
+                <Grid x:Name="CenterTrackerSection" Grid.Column="1" VerticalAlignment="Stretch" Margin="6,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <!-- Left divider -->
+                    <Rectangle Grid.Column="0" Style="{StaticResource VerticalDivider}" Margin="0,0,8,0"/>
+                    <!-- Tracker content -->
+                    <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                        <TextBlock Text="Trackers" FontWeight="Bold" FontSize="13"
+                                Foreground="{DynamicResource CForeground1}" Margin="0,0,0,4"
+                                HorizontalAlignment="Center"/>
+                        <StackPanel x:Name="TrackerPanel" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                    <!-- Right divider -->
+                    <Rectangle Grid.Column="2" Style="{StaticResource VerticalDivider}" Margin="8,0,0,0"/>
+                </Grid>
+                <!-- #endregion -->
+
+                <!-- #region Right Hand -->
+                <StackPanel x:Name="RightHandPanel" Grid.Column="2" Margin="4,0,0,0">
+                    <TextBlock Text="Right" FontWeight="Bold" FontSize="13"
+                            Foreground="{DynamicResource CForeground1}" Margin="0,0,0,4"
+                            HorizontalAlignment="Center"/>
+                    <!-- Header + Gesture icon -->
+                    <Grid Margin="0,0,0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="48"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="16"/>
+                                    <RowDefinition Height="16"/>
+                                    <RowDefinition Height="16"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="Gesture" Grid.Row="0" Style="{StaticResource Lbl}"/>
+                                <TextBlock x:Name="RightGestureText" Grid.Row="0" Grid.Column="1" Text="—"
+                                        Foreground="{DynamicResource CForeground1}" FontWeight="SemiBold" FontSize="11"
+                                        VerticalAlignment="Center"/>
+                                <TextBlock Text="Weight" Grid.Row="1" Style="{StaticResource Lbl}"/>
+                                <TextBlock x:Name="RightWeightText" Grid.Row="1" Grid.Column="1" Text="—"
+                                        FontSize="11" Foreground="{DynamicResource CForeground1}" VerticalAlignment="Center"/>
+                                <TextBlock Text="Closest" Grid.Row="2" Style="{StaticResource Lbl}"/>
+                                <TextBlock x:Name="RightClosestText" Grid.Row="2" Grid.Column="1" Text="—"
+                                        FontSize="11" Foreground="{DynamicResource CForeground1}" VerticalAlignment="Center"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Gesture icon (right hand, no flip) -->
+                        <Viewbox Grid.Column="1" Width="40" Height="48" Margin="4,0,0,0"
+                                VerticalAlignment="Center" Stretch="Uniform">
+                            <Path x:Name="RightGestureIcon" Fill="{StaticResource Inactive}"
+                                Stretch="Uniform"/>
+                        </Viewbox>
+                    </Grid>
+
+                    <!-- Finger bars -->
+                    <Grid Margin="0,0,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="40"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="26"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="16"/>
+                            <RowDefinition Height="16"/>
+                            <RowDefinition Height="16"/>
+                            <RowDefinition Height="16"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Index" Grid.Row="0" Style="{StaticResource Lbl}"/>
+                        <ProgressBar x:Name="RightIndexBar" Grid.Row="0" Grid.Column="1" Style="{StaticResource PurpleBar}" Margin="4,2,8,0"/>
+                        <TextBlock x:Name="RightIndexText" Grid.Row="0" Grid.Column="2" Style="{StaticResource Val}"/>
+                        <TextBlock Text="Middle" Grid.Row="1" Style="{StaticResource Lbl}"/>
+                        <ProgressBar x:Name="RightMiddleBar" Grid.Row="1" Grid.Column="1" Style="{StaticResource PurpleBar}" Margin="4,2,8,0"/>
+                        <TextBlock x:Name="RightMiddleText" Grid.Row="1" Grid.Column="2" Style="{StaticResource Val}"/>
+                        <TextBlock Text="Ring" Grid.Row="2" Style="{StaticResource Lbl}"/>
+                        <ProgressBar x:Name="RightRingBar" Grid.Row="2" Grid.Column="1" Style="{StaticResource PurpleBar}" Margin="4,2,8,0"/>
+                        <TextBlock x:Name="RightRingText" Grid.Row="2" Grid.Column="2" Style="{StaticResource Val}"/>
+                        <TextBlock Text="Pinky" Grid.Row="3" Style="{StaticResource Lbl}"/>
+                        <ProgressBar x:Name="RightPinkyBar" Grid.Row="3" Grid.Column="1" Style="{StaticResource PurpleBar}" Margin="4,2,8,0"/>
+                        <TextBlock x:Name="RightPinkyText" Grid.Row="3" Grid.Column="2" Style="{StaticResource Val}"/>
+                    </Grid>
+
+                    <!-- Controls MIRRORED: Pad | Stick | Grip | Trigger | B/A -->
+                    <Grid Margin="0,0,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" VerticalAlignment="Bottom"
+                                x:Name="RightPadBorder" Width="48" Height="48" CornerRadius="4"
+                                Background="{StaticResource DarkBg}" BorderBrush="{StaticResource Inactive}" BorderThickness="1.5">
+                            <Canvas Width="48" Height="48" ClipToBounds="True">
+                                <Ellipse x:Name="RightPadDot" Width="10" Height="10" Fill="{StaticResource Inactive}"
+                                        Canvas.Left="19" Canvas.Top="19"/>
+                            </Canvas>
+                        </Border>
+                        <TextBlock Grid.Row="2" Grid.Column="0" x:Name="RightPadCoord" Text="0.00, 0.00" FontSize="9"
+                                Foreground="{DynamicResource CForeground2}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+
+                        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="2" VerticalAlignment="Bottom"
+                                x:Name="RightStickBorder" Width="48" Height="48" CornerRadius="24"
+                                Background="{StaticResource DarkBg}" BorderBrush="{StaticResource Inactive}" BorderThickness="1.5">
+                            <Canvas Width="48" Height="48" ClipToBounds="True">
+                                <Ellipse x:Name="RightStickDot" Width="12" Height="12" Fill="{StaticResource Inactive}"
+                                        Canvas.Left="18" Canvas.Top="18"/>
+                            </Canvas>
+                        </Border>
+                        <TextBlock Grid.Row="2" Grid.Column="2" x:Name="RightStickCoord" Text="0.00, 0.00" FontSize="9"
+                                Foreground="{DynamicResource CForeground2}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+
+                        <TextBlock Grid.Row="0" Grid.Column="4" x:Name="RightGripPullVal" Text="0.00" FontSize="10"
+                                Foreground="{DynamicResource CForeground2}" HorizontalAlignment="Center" Margin="0,0,0,2"/>
+                        <Border Grid.Row="1" Grid.Column="4" VerticalAlignment="Center"
+                                x:Name="RightGripBorder" Width="26" Height="46"
+                                CornerRadius="10" Background="{StaticResource DarkBg}"
+                                BorderBrush="{StaticResource Inactive}" BorderThickness="1.5">
+                            <Grid>
+                                <Border x:Name="RightGripFill" CornerRadius="7" Height="0" Margin="2,2,1,1"
+                                        Background="{StaticResource Inactive}" VerticalAlignment="Bottom"/>
+                                <Border x:Name="RightGripForceFill" CornerRadius="7" Height="0" Margin="2,2,1,1"
+                                        Background="{StaticResource GoldAccent}" VerticalAlignment="Bottom"/>
+                                <TextBlock x:Name="RightGripLbl" Text="Grip" FontSize="8" FontWeight="SemiBold"
+                                        Foreground="{StaticResource Inactive}" Opacity="0.8"
+                                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock.LayoutTransform>
+                                        <RotateTransform Angle="-90"/>
+                                    </TextBlock.LayoutTransform>
+                                </TextBlock>
+                            </Grid>
+                        </Border>
+                        <TextBlock Grid.Row="2" Grid.Column="4" x:Name="RightGripVal" Text="0.00" FontSize="10"
+                                Foreground="{DynamicResource CForeground2}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+
+                        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="6" VerticalAlignment="Bottom"
+                                x:Name="RightTriggerBorder" Width="20" Height="52"
+                                CornerRadius="8,8,3,3" Background="{StaticResource DarkBg}"
+                                BorderBrush="{StaticResource Inactive}" BorderThickness="1.5">
+                            <Grid>
+                                <Border x:Name="RightTriggerFill" CornerRadius="5,5,1,1" Height="0" Margin="1,2,2,1"
+                                        Background="{StaticResource Inactive}" VerticalAlignment="Bottom"/>
+                                <TextBlock x:Name="RightTriggerLbl" Text="Trigger" FontSize="8" FontWeight="SemiBold"
+                                        Foreground="{StaticResource Inactive}" Opacity="0.8"
+                                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock.LayoutTransform>
+                                        <RotateTransform Angle="-90"/>
+                                    </TextBlock.LayoutTransform>
+                                </TextBlock>
+                            </Grid>
+                        </Border>
+                        <TextBlock Grid.Row="2" Grid.Column="6" x:Name="RightTriggerVal" Text="0.00" FontSize="10"
+                                Foreground="{DynamicResource CForeground2}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+
+                        <StackPanel Grid.Row="0" Grid.RowSpan="3" Grid.Column="8" VerticalAlignment="Center">
+                            <Border x:Name="RightBBtn" Style="{StaticResource BtnIcon}" Margin="0,2,0,0">
+                                <TextBlock x:Name="RightBLbl" Text="B" Style="{StaticResource BtnLbl}"/>
+                            </Border>
+                            <Border x:Name="RightABtn" Style="{StaticResource BtnIcon}" Margin="0,8,0,0">
+                                <TextBlock x:Name="RightALbl" Text="A" Style="{StaticResource BtnLbl}"/>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+                <!-- #endregion -->
+            </Grid>
+        </StackPanel>
+    </Grid>
+</UserControl>
