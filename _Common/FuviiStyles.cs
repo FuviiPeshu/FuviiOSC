@@ -32,6 +32,7 @@ public static class FuviiStyles
     public static readonly SolidColorBrush CyanBrush         = Freeze(new SolidColorBrush(Cyan));
     public static readonly SolidColorBrush GreenBrush        = Freeze(new SolidColorBrush(Green));
     public static readonly SolidColorBrush OrangeBrush       = Freeze(new SolidColorBrush(Orange));
+    public static readonly SolidColorBrush DangerRedBrush    = Freeze(new SolidColorBrush(DangerRed));
     public static readonly SolidColorBrush InactiveBrush     = Freeze(new SolidColorBrush(Inactive));
     public static readonly SolidColorBrush DarkBgBrush       = Freeze(new SolidColorBrush(DarkBg));
     public static readonly SolidColorBrush WhiteSubtleBrush  = Freeze(new SolidColorBrush(WhiteSubtle));

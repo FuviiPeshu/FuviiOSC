@@ -11,40 +11,21 @@ public partial class FuviiHeader
     private const double NotchDepth = 14;
     private const double NotchPadding = 14;
     private const double DiagonalWidth = 14;
-    private const double DefaultNotchHalfWidth = 60;
-    private const double ShapeHeight = 42;
+    private const double DefaultNotchHalfWidth = 64;
+    private const double ShapeHeight = 44;
 
     private TextBlock? _titleTextBlock;
 
     public FuviiHeader()
     {
         InitializeComponent();
-        Margin = new Thickness(-13, -42, -13, 0);
+        Margin = new Thickness(-13, -42, -13, -13);
         VerticalAlignment = VerticalAlignment.Stretch;
         Grid.SetColumnSpan(this, 99);
         Panel.SetZIndex(this, -1);
 
-        BackgroundPath.Fill = CreateHeaderGradient();
-
         Loaded += OnLoaded;
         SizeChanged += OnSizeChanged;
-    }
-
-    private static LinearGradientBrush CreateHeaderGradient()
-    {
-        Color top = FuviiStyles.Purple;
-        top.A = 0x50;
-        Color bottom = FuviiStyles.Purple;
-        bottom.A = 0x00;
-
-        LinearGradientBrush brush = new()
-        {
-            StartPoint = new Point(0, 0),
-            EndPoint = new Point(0, 1),
-            GradientStops = { new GradientStop(top, 0), new GradientStop(bottom, 1) }
-        };
-        brush.Freeze();
-        return brush;
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)

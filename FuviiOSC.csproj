@@ -1,39 +1,33 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
-		<UseWPF>true</UseWPF>
-		<Nullable>enable</Nullable>
-		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-		<WindowsSdkPackageVersion>10.0.26100.1</WindowsSdkPackageVersion>
-		<Description>Fuvii's VRCOSC Modules</Description>
-		<Authors>FuviiPeshu</Authors>
-		<Title>Fuvii's Modules</Title>
-		<Product>FuviiOSC</Product>
-	</PropertyGroup>
-	<ItemGroup>
-	  <Compile Remove="VRCOSC-main\**" />
-	  <EmbeddedResource Remove="VRCOSC-main\**" />
-	  <None Remove="VRCOSC-main\**" />
-	  <Page Remove="VRCOSC-main\**" />
-	</ItemGroup>
+    <PropertyGroup>
+        <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+        <UseWPF>true</UseWPF>
+        <Nullable>enable</Nullable>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <WindowsSdkPackageVersion>10.0.26100.1</WindowsSdkPackageVersion>
+        <Description>Fuvii's VRCOSC Modules</Description>
+        <Authors>FuviiPeshu</Authors>
+        <Title>Fuvii's Modules</Title>
+        <Product>FuviiOSC</Product>
+    </PropertyGroup>
 
-	<ItemGroup>
-	  <Resource Include="_Common\FuviiLogo.png" />
-	</ItemGroup>
+    <ItemGroup>
+        <Compile Remove="VRCOSC-main\**" />
+        <EmbeddedResource Remove="VRCOSC-main\**" />
+        <None Remove="VRCOSC-main\**" />
+        <Page Remove="VRCOSC-main\**" />
+    </ItemGroup>
 
+    <ItemGroup>
+        <Resource Include="_Common\FuviiLogo.png" />
+    </ItemGroup>
 
-	<ItemGroup>
-		<PackageReference Include="VolcanicArts.VRCOSC.SDK" Version="2025.1120.0" />
-	</ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="VolcanicArts.VRCOSC.SDK" Version="2025.1120.0" />
+    </ItemGroup>
 
-	<ItemGroup>
-	  <Page Update="SqueakMeter\AudioDeviceModuleRuntimeView.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </Page>
-	</ItemGroup>
-
-	<!--> This is a post build event that copies your module assembly to the local package directory for VRCOSC <-->
-	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-		<Exec Command="copy /Y &quot;$(TargetDir)$(TargetName).dll&quot; &quot;%25appdata%25\VRCOSC\packages\local\$(TargetName).dll&quot;" />
-	</Target>
+    <!-- > This is a post build event that copies your module assembly to the local package directory for VRCOSC < -->
+    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+        <Exec Command="copy /Y &quot;$(TargetDir)$(TargetName).dll&quot; &quot;%25appdata%25\VRCOSC\packages\local\$(TargetName).dll&quot;" />
+    </Target>
 </Project>
