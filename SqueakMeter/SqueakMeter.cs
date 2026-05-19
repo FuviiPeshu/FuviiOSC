@@ -71,9 +71,9 @@ public class SqueakMeterModule : Module
         CreateSlider(SqueakMeterSetting.TrebleBoost, "Treble boost", "Scalar for treble (default: 3.6)", 3.6f, 0.1f, 10, 0.1f);
 
         RegisterParameter<float>(SqueakMeterParameter.Volume, "VRCOSC/SqueakMeter/Volume", ParameterMode.Write, "Volume", "Sends value depending on the volume level\nRange: 0 - 1");
-        RegisterParameter<float>(SqueakMeterParameter.Bass, "VRCOSC/SqueakMeter/Bass", ParameterMode.Write, "Bass", "Sends the normalized amplitude (volume) of the bass frequency band (0 – 250 Hz)\nRange: 0 - 1");
-        RegisterParameter<float>(SqueakMeterParameter.Mid, "VRCOSC/SqueakMeter/Mid", ParameterMode.Write, "Mid", "Sends the normalized amplitude (volume) of the mid frequency band (250 – 4000 Hz)\nRange: 0 - 1");
-        RegisterParameter<float>(SqueakMeterParameter.Treble, "VRCOSC/SqueakMeter/Treble", ParameterMode.Write, "Treble", "Sends the normalized amplitude (volume) of the treble frequency band (4000 – 20000 Hz)\nRange: 0 - 1");
+        RegisterParameter<float>(SqueakMeterParameter.Bass, "VRCOSC/SqueakMeter/Bass", ParameterMode.Write, "Bass", "Sends the normalized amplitude (volume) of the bass frequency band (0 - 250 Hz)\nRange: 0 - 1");
+        RegisterParameter<float>(SqueakMeterParameter.Mid, "VRCOSC/SqueakMeter/Mid", ParameterMode.Write, "Mid", "Sends the normalized amplitude (volume) of the mid frequency band (250 - 4000 Hz)\nRange: 0 - 1");
+        RegisterParameter<float>(SqueakMeterParameter.Treble, "VRCOSC/SqueakMeter/Treble", ParameterMode.Write, "Treble", "Sends the normalized amplitude (volume) of the treble frequency band (4000 - 20000 Hz)\nRange: 0 - 1");
         RegisterParameter<float>(SqueakMeterParameter.Direction, "VRCOSC/SqueakMeter/Direction", ParameterMode.Write, "Direction", "Sends value depending on the audio direction (stereo balance)\nRange: 0 - 1 (where 0 = left, 0.5 = center, 1 = right)");
 
         SetRuntimeView(typeof(AudioDeviceModuleRuntimeView));
@@ -117,7 +117,7 @@ public class SqueakMeterModule : Module
             }
 
             CleanupCapture();
-            // Do NOT dispose enumerator here — it's reused across start/stop cycles and the UI runtime may still call stuff
+            // Do NOT dispose enumerator here - it's reused across start/stop cycles and the UI runtime may still call stuff
         }
         catch (Exception error)
         {

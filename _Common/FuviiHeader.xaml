@@ -6,11 +6,6 @@
     mc:Ignorable="d"
     IsHitTestVisible="False">
     <UserControl.Resources>
-        <LinearGradientBrush x:Key="HeaderGradient" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#FF6932DD" Offset="0"/>
-            <GradientStop Color="#526932DD" Offset="0.32"/>
-            <GradientStop Color="#006932DD" Offset="1"/>
-        </LinearGradientBrush>
         <LinearGradientBrush x:Key="BorderGradient" StartPoint="0,0" EndPoint="0,1">
             <GradientStop Color="#FF6932DD" Offset="0"/>
             <GradientStop Color="#006932DD" Offset="1"/>
@@ -21,7 +16,16 @@
             Background="#086932DD"
             BorderBrush="{StaticResource BorderGradient}"
             BorderThickness="2"/>
-        <Path x:Name="BackgroundPath" Fill="{StaticResource HeaderGradient}"/>
+        <Polygon Points="0,0 150,0 131,26 19,26" Fill="#FF6932DD"
+            HorizontalAlignment="Left" VerticalAlignment="Top"
+            Margin="16,0,0,0"/>
+        <TextBlock FontSize="16" Foreground="White"
+            HorizontalAlignment="Left" VerticalAlignment="Top"
+            Width="150" TextAlignment="Center" Margin="16,2,0,0">
+            <Run Text="&lt;" FontWeight="Normal"/><!--
+            --><Run Text="FuviiOSC" FontWeight="Bold"/><!--
+            --><Run Text="/&gt;" FontWeight="Normal"/>
+        </TextBlock>
         <Canvas ClipToBounds="False">
             <Image x:Name="WatermarkImage"
                 Source="pack://application:,,,/FuviiOSC;component/_Common/FuviiLogo.png"
