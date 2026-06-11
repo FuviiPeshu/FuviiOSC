@@ -113,6 +113,10 @@ public class PawTrackingModule : Module
             "Gesture Left Weight", "Grip strength for the left gesture weight (0-1)");
         RegisterParameter<float>(PawTrackingParam.GestureRightWeight, "GestureRightWeight", ParameterMode.Write,
             "Gesture Right Weight", "Grip strength for the right gesture weight (0-1)");
+        RegisterParameter<float>(PawTrackingParam.GestureLeftConfidence, "VRCOSC/PawTracking/GestureLeftConfidence", ParameterMode.Write,
+            "Gesture Left Confidence", "How well the left hand matches the detected gesture (0-1)");
+        RegisterParameter<float>(PawTrackingParam.GestureRightConfidence, "VRCOSC/PawTracking/GestureRightConfidence", ParameterMode.Write,
+            "Gesture Right Confidence", "How well the right hand matches the detected gesture (0-1)");
 
         RegisterParameter<float>(PawTrackingParam.LeftIndex, "VRCOSC/PawTracking/LeftIndex", ParameterMode.Write,
             "Left Index Curl", "Raw index finger curl (0=open, 1=closed)");
@@ -288,6 +292,8 @@ public class PawTrackingModule : Module
         SendParameter(PawTrackingParam.GestureRight, 0);
         SendParameter(PawTrackingParam.GestureLeftWeight, 0f);
         SendParameter(PawTrackingParam.GestureRightWeight, 0f);
+        SendParameter(PawTrackingParam.GestureLeftConfidence, 0f);
+        SendParameter(PawTrackingParam.GestureRightConfidence, 0f);
         return Task.CompletedTask;
     }
 
@@ -384,6 +390,7 @@ public class PawTrackingModule : Module
 
         SendParameter(isLeft ? PawTrackingParam.GestureLeft : PawTrackingParam.GestureRight, (int)result.Gesture);
         SendParameter(isLeft ? PawTrackingParam.GestureLeftWeight : PawTrackingParam.GestureRightWeight, outputWeight);
+        SendParameter(isLeft ? PawTrackingParam.GestureLeftConfidence : PawTrackingParam.GestureRightConfidence, result.ClosestWeight);
 
         SendParameter(isLeft ? PawTrackingParam.LeftIndex : PawTrackingParam.RightIndex, fingers.Index);
         SendParameter(isLeft ? PawTrackingParam.LeftMiddle : PawTrackingParam.RightMiddle, fingers.Middle);

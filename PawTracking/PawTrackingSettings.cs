@@ -32,6 +32,8 @@ public enum PawTrackingParam
     GestureRight,
     GestureLeftWeight,
     GestureRightWeight,
+    GestureLeftConfidence,
+    GestureRightConfidence,
     // Finger curls
     LeftIndex,
     LeftMiddle,
