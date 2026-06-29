@@ -29,6 +29,7 @@ public class PawTrackingModule : Module
     private bool _trackerActionsReady;
     private float _leftGripForce;
     private float _rightGripForce;
+    private int _consecutiveOpenVRFailures;
 
     public GestureResult LastLeftGesture => _lastLeftGesture;
     public GestureResult LastRightGesture => _lastRightGesture;
@@ -268,6 +269,7 @@ public class PawTrackingModule : Module
         _gripForceReady = false;
         _leftGripForce = 0f;
         _rightGripForce = 0f;
+        _consecutiveOpenVRFailures = 0;
         _knownTrackerIndexes = new HashSet<uint>();
         _lastDeviceScan = DateTime.UtcNow;
 
@@ -301,8 +303,34 @@ public class PawTrackingModule : Module
     private void OnUpdate()
     {
         // Guard against OpenVR being torn down during shutdown
-        if (OpenVR.Input == null) return;
+        if (OpenVR.Input == null)
+        {
+            _consecutiveOpenVRFailures++;
+            return;
+        }
 
+        // Back off if OpenVR has been failing repeatedly
+        if (_consecutiveOpenVRFailures > 10)
+        {
+            _consecutiveOpenVRFailures--;
+            return;
+        }
+
+        try
+        {
+            OnUpdateCore();
+            _consecutiveOpenVRFailures = 0;
+        }
+        catch (Exception ex)
+        {
+            _consecutiveOpenVRFailures++;
+            if (_consecutiveOpenVRFailures <= 3)
+                LogDebug($"OpenVR update failed: {ex.Message}");
+        }
+    }
+
+    private void OnUpdateCore()
+    {
         Controller? lc = GetOpenVRManager().GetLeftController();
         Controller? rc = GetOpenVRManager().GetRightController();
 

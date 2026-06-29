@@ -129,10 +129,13 @@ public class HaptickleModule : Module
     {
         if (openVrSystem == null || receivedParameter == null) return;
 
+        string paramName = receivedParameter.Name;
+
         foreach (HapticTrigger trigger in HapticTriggers)
         {
-            foreach (HapticTriggerQueryableParameter queryableParameter in trigger.HapticTriggerParams.Where(param => param.Name.Value == receivedParameter.Name))
+            foreach (HapticTriggerQueryableParameter queryableParameter in trigger.HapticTriggerParams)
             {
+                if (queryableParameter.Name.Value != paramName) continue;
                 QueryResult result = queryableParameter.Evaluate(receivedParameter);
                 if (result == null) continue;
 

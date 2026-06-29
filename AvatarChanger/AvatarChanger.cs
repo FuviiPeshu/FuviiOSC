@@ -29,10 +29,14 @@ public class AvatarChangerModule : Module
     protected override void OnAnyParameterReceived(VRChatParameter receivedParameter)
     {
         List<AvatarChangerTrigger> triggers = GetSettingValue<List<AvatarChangerTrigger>>(AvatarChangerSetting.AvatarChangerTriggerInstances);
+        string paramName = receivedParameter.Name;
+
         foreach (AvatarChangerTrigger trigger in triggers)
         {
-            foreach (TriggerQueryableParameter queryableParameter in trigger.TriggerParams.Where(param => param.Name.Value == receivedParameter.Name))
+            foreach (TriggerQueryableParameter queryableParameter in trigger.TriggerParams)
             {
+                if (queryableParameter.Name.Value != paramName) continue;
+
                 VRCOSC.App.SDK.Parameters.Queryable.QueryResult result = queryableParameter.Evaluate(receivedParameter);
                 if (result != null && result.JustBecameValid)
                 {
