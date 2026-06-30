@@ -9,6 +9,13 @@ using VRCOSC.App.Utils;
 
 namespace FuviiOSC.AvatarChanger;
 
+public enum AvatarScaleMode
+{
+    None,
+    MatchPrevious,
+    FixedHeight
+}
+
 public class AvatarChangerModuleSetting : ListModuleSetting<AvatarChangerTrigger>
 {
     public AvatarChangerModuleSetting()
@@ -30,6 +37,12 @@ public class AvatarChangerTrigger : IEquatable<AvatarChangerTrigger>
 
     [JsonProperty("avatar_id")]
     public Observable<string> AvatarId { get; set; } = new("avtr_");
+
+    [JsonProperty("scale_mode")]
+    public Observable<int> ScaleMode { get; set; } = new((int)AvatarScaleMode.None);
+
+    [JsonProperty("fixed_eye_height")]
+    public Observable<float> FixedEyeHeight { get; set; } = new(1.28f);
 
     [JsonProperty("trigger_params")]
     public ObservableCollection<TriggerQueryableParameter> TriggerParams { get; set; } = [];

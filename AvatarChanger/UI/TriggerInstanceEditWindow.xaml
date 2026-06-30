@@ -27,16 +27,37 @@
                 <TextBlock Text="Trigger Name" Foreground="{StaticResource CForeground2}" FontSize="14" FontWeight="Bold" Margin="0 5 0 2" />
                 <TextBlock Text="Friendly name to display on the trigger list :3" Foreground="{StaticResource CForeground2}" FontSize="12" Margin="0 0 0 5" />
                 <TextBox Text="{Binding TriggerName.Value, UpdateSourceTrigger=PropertyChanged}"
-                         Background="{StaticResource CBackground3}" Foreground="{StaticResource CForeground1}"
-                         FontSize="16" Padding="5"
-                         HorizontalAlignment="Stretch" VerticalContentAlignment="Center" />
+                        Background="{StaticResource CBackground3}" Foreground="{StaticResource CForeground1}"
+                        FontSize="16" Padding="5"
+                        HorizontalAlignment="Stretch" VerticalContentAlignment="Center" />
                 
                 <TextBlock Text="Avatar ID" Foreground="{StaticResource CForeground2}" FontSize="14" FontWeight="Bold" Margin="0 15 0 2" />
                 <TextBlock Text="ID of the avatar you want to change to (example: avtr_26187637-0c30-4a09-86e1-bc928c07309e)" Foreground="{StaticResource CForeground2}" FontSize="12" Margin="0 0 0 5" TextWrapping="Wrap" />
                 <TextBox Text="{Binding AvatarId.Value, UpdateSourceTrigger=PropertyChanged}"
-                         Background="{StaticResource CBackground3}" Foreground="{StaticResource CForeground1}"
-                         FontSize="16" Padding="5"
-                         HorizontalAlignment="Stretch" VerticalContentAlignment="Center" />
+                        Background="{StaticResource CBackground3}" Foreground="{StaticResource CForeground1}"
+                        FontSize="16" Padding="5"
+                        HorizontalAlignment="Stretch" VerticalContentAlignment="Center" />
+                
+                <TextBlock Text="Scale After Switch" Foreground="{StaticResource CForeground2}" FontSize="14" FontWeight="Bold" Margin="0 15 0 2" />
+                <TextBlock Text="Optionally adjust avatar height after switching. 'Match Previous' keeps your current size, 'Fixed Height' sets a specific eye height in meters." Foreground="{StaticResource CForeground2}" FontSize="12" Margin="0 0 0 5" TextWrapping="Wrap" />
+                <StackPanel Orientation="Horizontal" Margin="0 0 0 5">
+                    <ComboBox x:Name="ScaleModeCombo"
+                            SelectedIndex="{Binding ScaleMode.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            Background="{StaticResource CBackground3}" Foreground="{StaticResource CForeground1}"
+                            FontSize="14" Padding="5" MinWidth="160"
+                            SelectionChanged="ScaleModeCombo_SelectionChanged">
+                        <ComboBoxItem Content="None" />
+                        <ComboBoxItem Content="Match Previous" />
+                        <ComboBoxItem Content="Fixed Height" />
+                    </ComboBox>
+                    <TextBlock x:Name="FixedHeightLabel" Text="Eye height (m):" Foreground="{StaticResource CForeground2}" FontSize="14" Margin="15 0 5 0" VerticalAlignment="Center"
+                            Visibility="{Binding FixedHeightVisible, Mode=OneWay}" />
+                    <TextBox x:Name="FixedHeightBox"
+                            Text="{Binding FixedEyeHeight.Value, UpdateSourceTrigger=PropertyChanged, StringFormat=F3}"
+                            Background="{StaticResource CBackground3}" Foreground="{StaticResource CForeground1}"
+                            FontSize="14" Padding="5" MinWidth="80"
+                            Visibility="{Binding FixedHeightVisible, Mode=OneWay}" />
+                </StackPanel>
                 
                 <Border Background="{DynamicResource CBackground1}" Height="30" Margin="0 15 0 0">
                     <TextBlock

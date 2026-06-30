@@ -42,6 +42,6 @@ public partial class AvatarChangerModuleSettingView
         FrameworkElement element = (FrameworkElement)sender;
         AvatarChangerTrigger triggerInstance = (AvatarChangerTrigger)element.Tag;
 
-        windowManager.TrySpawnChild(new AvatarChangerTriggerInstanceEditWindow(triggerInstance.Name, triggerInstance.AvatarId, triggerInstance.TriggerParams));
+        windowManager.TrySpawnChild(new AvatarChangerTriggerInstanceEditWindow(triggerInstance.Name, triggerInstance.AvatarId, triggerInstance.ScaleMode, triggerInstance.FixedEyeHeight, triggerInstance.TriggerParams));
     }
 }
