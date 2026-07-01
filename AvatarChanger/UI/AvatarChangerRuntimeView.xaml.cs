@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using FuviiOSC.Common;
 
@@ -73,15 +73,35 @@ public partial class AvatarChangerRuntimeView
 
     private static UIElement CreateButtonContent(AvatarChangerTrigger trigger)
     {
-        TextBlock label = new()
+        StackPanel panel = new()
+        {
+            Orientation = Orientation.Vertical,
+            HorizontalAlignment = HorizontalAlignment.Center,
+        };
+
+        BitmapImage? icon = AvatarIconLoader.GetIcon(trigger.IconKey.Value);
+        if (icon != null)
+        {
+            panel.Children.Add(new Image
+            {
+                Source = icon,
+                Width = 36,
+                Height = 36,
+                Margin = new Thickness(0, 0, 0, 4),
+                HorizontalAlignment = HorizontalAlignment.Center,
+            });
+        }
+
+        panel.Children.Add(new TextBlock
         {
             Text = trigger.Name.Value,
             Foreground = FuviiStyles.WhiteSoftBrush,
             FontSize = 14,
             TextAlignment = TextAlignment.Center,
             TextWrapping = TextWrapping.Wrap,
-        };
-        return label;
+        });
+
+        return panel;
     }
 
     private void OnTriggerClick(object sender, MouseButtonEventArgs e)

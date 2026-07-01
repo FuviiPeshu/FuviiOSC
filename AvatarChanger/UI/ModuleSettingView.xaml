@@ -3,8 +3,13 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:common="clr-namespace:FuviiOSC.Common"
     mc:Ignorable="d"
     Loaded="AvatarChangerModuleSettingView_OnLoaded">
+    <UserControl.Resources>
+        <common:IconKeyToImageConverter x:Key="IconKeyToImage" />
+        <common:NonEmptyStringToVisibilityConverter x:Key="IconKeyToVisibility" />
+    </UserControl.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
@@ -28,17 +33,23 @@
                                 VerticalAlignment="Top">
                                 <Grid VerticalAlignment="Center">
                                     <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="10" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0"
+                                    <Image Grid.Column="0"
+                                        Width="24" Height="24" Margin="8 4"
+                                        Source="{Binding IconKey.Value, Converter={StaticResource IconKeyToImage}}"
+                                        Visibility="{Binding IconKey.Value, Converter={StaticResource IconKeyToVisibility}}"
+                                        VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1"
                                         Margin="8"
                                         Text="{Binding Name.Value, Mode=OneWay}"
                                         Foreground="{StaticResource CForeground2}"
                                         TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
                                         FontSize="16" FontWeight="Regular" VerticalAlignment="Center" TextAlignment="Left" />
-                                    <StackPanel Grid.Column="2" Orientation="Horizontal" FlowDirection="RightToLeft" Margin="8 0">
+                                    <StackPanel Grid.Column="3" Orientation="Horizontal" FlowDirection="RightToLeft" Margin="8 0">
                                         <Button Content="Edit" Style="{StaticResource EditButton}" Click="EditInstanceButton_OnClick" Tag="{Binding}" />
                                         <Button Style="{StaticResource RemoveButton}" Margin="0 0 5 0" Click="RemoveInstanceButton_OnClick" Tag="{Binding}" />
                                     </StackPanel>

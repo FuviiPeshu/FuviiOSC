@@ -38,6 +38,19 @@
                         FontSize="16" Padding="5"
                         HorizontalAlignment="Stretch" VerticalContentAlignment="Center" />
                 
+                <TextBlock Text="Icon" Foreground="{StaticResource CForeground2}" FontSize="14" FontWeight="Bold" Margin="0 15 0 2" />
+                <TextBlock Text="Pick an icon to display in the Run tab. Drop PNGs into AvatarChanger/icons/ and rebuild to add more." Foreground="{StaticResource CForeground2}" FontSize="12" Margin="0 0 0 5" TextWrapping="Wrap" />
+                <StackPanel Orientation="Horizontal" Margin="0 0 0 5">
+                    <Image x:Name="SelectedIconPreview" Width="32" Height="32" Margin="0 0 8 0" VerticalAlignment="Center" />
+                    <Button Content="Choose Icon..." Click="ChooseIcon_OnClick"
+                            Background="{StaticResource CBackground3}" Foreground="{StaticResource CForeground1}"
+                            FontSize="14" Padding="8 4" VerticalAlignment="Center" />
+                    <Button Content="Clear" Click="ClearIcon_OnClick" Margin="4 0 0 0"
+                            Background="{StaticResource CBackground3}" Foreground="{StaticResource CForeground2}"
+                            FontSize="12" Padding="6 4" VerticalAlignment="Center" />
+                    <TextBlock x:Name="IconKeyLabel" Text="" Foreground="{StaticResource CForeground2}" FontSize="12" Margin="8 0 0 0" VerticalAlignment="Center" />
+                </StackPanel>
+
                 <TextBlock Text="Scale After Switch" Foreground="{StaticResource CForeground2}" FontSize="14" FontWeight="Bold" Margin="0 15 0 2" />
                 <TextBlock Text="Optionally adjust avatar height after switching. 'Match Previous' keeps your current size, 'Fixed Height' sets a specific eye height in meters." Foreground="{StaticResource CForeground2}" FontSize="12" Margin="0 0 0 5" TextWrapping="Wrap" />
                 <StackPanel Orientation="Horizontal" Margin="0 0 0 5">

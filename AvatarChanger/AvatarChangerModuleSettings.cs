@@ -38,6 +38,9 @@ public class AvatarChangerTrigger : IEquatable<AvatarChangerTrigger>
     [JsonProperty("avatar_id")]
     public Observable<string> AvatarId { get; set; } = new("avtr_");
 
+    [JsonProperty("icon_key")]
+    public Observable<string> IconKey { get; set; } = new(string.Empty);
+
     [JsonProperty("scale_mode")]
     public Observable<int> ScaleMode { get; set; } = new((int)AvatarScaleMode.None);
 

@@ -20,6 +20,7 @@
 
     <ItemGroup>
         <Resource Include="_Common\FuviiLogo.png" />
+        <Resource Include="AvatarChanger\icons\*.png" />
     </ItemGroup>
 
     <ItemGroup>
