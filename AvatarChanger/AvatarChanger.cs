@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using FuviiOSC.AvatarChanger.UI;
 using VRCOSC.App.SDK.Modules;
 using VRCOSC.App.SDK.Parameters;
 
@@ -31,6 +32,8 @@ public class AvatarChangerModule : Module
         Applied,
     }
 
+    public event Action? TriggersChanged;
+
     protected override void OnPreLoad()
     {
         CreateCustomSetting(AvatarChangerSetting.AvatarChangerTriggerInstances, new AvatarChangerModuleSetting());
@@ -38,6 +41,13 @@ public class AvatarChangerModule : Module
         CreateState(AvatarChangerState.Default, "Default");
 
         CreateGroup("Avatar Change Triggers", "", AvatarChangerSetting.AvatarChangerTriggerInstances);
+
+        SetRuntimeView(typeof(AvatarChangerRuntimeView));
+    }
+
+    protected override void OnPostLoad()
+    {
+        GetSetting(AvatarChangerSetting.AvatarChangerTriggerInstances).OnSettingChange += () => TriggersChanged?.Invoke();
     }
 
     protected override Task<bool> OnModuleStart()
@@ -62,31 +72,7 @@ public class AvatarChangerModule : Module
                 VRCOSC.App.SDK.Parameters.Queryable.QueryResult result = queryableParameter.Evaluate(receivedParameter);
                 if (result != null && result.JustBecameValid)
                 {
-                    AvatarScaleMode scaleMode = (AvatarScaleMode)trigger.ScaleMode.Value;
-                    string avatarId = trigger.AvatarId.Value;
-                    float fixedHeight = trigger.FixedEyeHeight.Value;
-                    float currentHeight = 0f;
-                    if (scaleMode == AvatarScaleMode.MatchPrevious && GetClient().IsInAvatar)
-                    {
-                        currentHeight = GetClient().Avatar!.EyeHeight;
-                    }
-
-                    if (scaleMode != AvatarScaleMode.None)
-                    {
-                        _preChangeAvatarId = GetClient().IsInAvatar ? GetClient().Avatar!.Id : string.Empty;
-                        _pendingScale = true;
-                        _pendingScaleMode = scaleMode;
-                        _pendingFixedHeight = fixedHeight;
-                        _pendingMatchHeight = currentHeight;
-                        _pendingScaleSince = DateTime.UtcNow;
-                        _lastSeenEyeHeight = 0f;
-                        _eyeHeightStableSince = DateTime.MinValue;
-                        _phase = ScalePhase.WaitingForNewAvatar;
-                        _applyCount = 0;
-                        LogDebug($"Scale queued: mode={scaleMode}, matchH={currentHeight:F3}m, fixedH={fixedHeight:F3}m, prevAvatar={_preChangeAvatarId}");
-                    }
-
-                    ChangeAvatar(avatarId);
+                    TriggerAvatarChange(trigger);
                 }
             }
         }
@@ -193,6 +179,38 @@ public class AvatarChangerModule : Module
             default:
                 return -1f;
         }
+    }
+
+    public List<AvatarChangerTrigger> GetTriggers()
+    {
+        return GetSettingValue<List<AvatarChangerTrigger>>(AvatarChangerSetting.AvatarChangerTriggerInstances);
+    }
+
+    public void TriggerAvatarChange(AvatarChangerTrigger trigger)
+    {
+        AvatarScaleMode scaleMode = (AvatarScaleMode)trigger.ScaleMode.Value;
+        string avatarId = trigger.AvatarId.Value;
+        float fixedHeight = trigger.FixedEyeHeight.Value;
+        float currentHeight = 0f;
+        if (scaleMode == AvatarScaleMode.MatchPrevious && GetClient().IsInAvatar)
+            currentHeight = GetClient().Avatar!.EyeHeight;
+
+        if (scaleMode != AvatarScaleMode.None)
+        {
+            _preChangeAvatarId = GetClient().IsInAvatar ? GetClient().Avatar!.Id : string.Empty;
+            _pendingScale = true;
+            _pendingScaleMode = scaleMode;
+            _pendingFixedHeight = fixedHeight;
+            _pendingMatchHeight = currentHeight;
+            _pendingScaleSince = DateTime.UtcNow;
+            _lastSeenEyeHeight = 0f;
+            _eyeHeightStableSince = DateTime.MinValue;
+            _phase = ScalePhase.WaitingForNewAvatar;
+            _applyCount = 0;
+            LogDebug($"Scale queued (manual): mode={scaleMode}, matchH={currentHeight:F3}m, fixedH={fixedHeight:F3}m");
+        }
+
+        ChangeAvatar(avatarId);
     }
 
     private enum AvatarChangerSetting
