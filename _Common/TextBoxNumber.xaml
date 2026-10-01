@@ -1,0 +1,36 @@
+<UserControl x:Class="FuviiOSC.Common.TextBoxNumber"
+             x:Name="Root"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:FuviiOSC.Common">
+    <UserControl.Resources>
+        <Style TargetType="{x:Type TextBox}">
+            <Setter Property="Validation.ErrorTemplate" Value="{x:Null}" />
+            <Style.Triggers>
+                <Trigger Property="Validation.HasError" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource DangerRedBrush}" />
+                    <Setter Property="ToolTip">
+                        <Setter.Value>
+                            <Binding RelativeSource="{RelativeSource Self}"
+                                     Path="(Validation.Errors)[0].ErrorContent" />
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <TextBox Foreground="{DynamicResource CForeground2}"
+             VerticalContentAlignment="Center"
+             FontSize="16"
+             FontWeight="Regular"
+             Background="{DynamicResource CBackground5}">
+        <TextBox.Text>
+            <Binding ElementName="Root" Path="Text" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged">
+                <Binding.ValidationRules>
+                    <local:TextBoxNumberValidationRule ValidatesOnTargetUpdated="True" />
+                </Binding.ValidationRules>
+            </Binding>
+        </TextBox.Text>
+    </TextBox>
+</UserControl>

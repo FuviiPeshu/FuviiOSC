@@ -1,10 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 using FuviiOSC.AvatarChanger.UI;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using VRCOSC.App.SDK.Modules.Attributes.Settings;
 using VRCOSC.App.SDK.Parameters.Queryable;
+using VRCOSC.App.UI.Views.Modules.Settings;
 using VRCOSC.App.Utils;
 
 namespace FuviiOSC.AvatarChanger;
@@ -24,6 +28,38 @@ public class AvatarChangerModuleSetting : ListModuleSetting<AvatarChangerTrigger
     }
 
     protected override AvatarChangerTrigger CreateItem() => new();
+}
+
+public sealed class AvatarHeightPresetSetting : StringListModuleSetting
+{
+    public const int MaximumPresetCount = 10;
+
+    public AvatarHeightPresetSetting(string title, string description, IEnumerable<float> defaultValues)
+        : base(title, description, typeof(AvatarHeightPresetSettingView), defaultValues.Select(value => value.ToString(CultureInfo.InvariantCulture)))
+    {
+    }
+
+    internal static bool TryParseHeight(string value, out float height)
+    {
+        string normalizedValue = value.Replace(',', '.');
+
+        return float.TryParse(normalizedValue, NumberStyles.Float, CultureInfo.InvariantCulture, out height) &&
+               float.IsFinite(height);
+    }
+
+    public override void Add()
+    {
+        if (Attribute.Count >= MaximumPresetCount) return;
+
+        base.Add();
+    }
+
+    protected override bool Deserialise(object? ingestValue)
+    {
+        if (ingestValue is not JArray jArrayValue) return false;
+
+        return base.Deserialise(new JArray(jArrayValue.Take(MaximumPresetCount)));
+    }
 }
 
 [JsonObject(MemberSerialization.OptIn)]

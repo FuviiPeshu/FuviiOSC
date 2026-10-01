@@ -5,23 +5,112 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:common="clr-namespace:FuviiOSC.Common"
     mc:Ignorable="d">
+    <UserControl.Resources>
+        <Style x:Key="HeightPresetButton" TargetType="Border">
+            <Setter Property="Width" Value="64" />
+            <Setter Property="Height" Value="22" />
+            <Setter Property="Margin" Value="0,2" />
+            <Setter Property="Padding" Value="2,0" />
+            <Setter Property="Background" Value="{StaticResource DarkBg}" />
+            <Setter Property="BorderBrush" Value="{x:Static common:FuviiStyles.PurpleBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{x:Static common:FuviiStyles.PurpleFillBrush}" />
+                    <Setter Property="BorderBrush" Value="{x:Static common:FuviiStyles.PurpleBrush}" />
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.4" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
     <Grid Margin="8">
         <common:FuviiHeader/>
 
-        <StackPanel VerticalAlignment="Center">
-            <TextBlock x:Name="EmptyLabel"
-                Text="No triggers configured"
-                Foreground="{DynamicResource CForeground2}"
-                FontSize="14" HorizontalAlignment="Center"
-                Visibility="Collapsed" />
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="64" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="80" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
 
-            <ItemsControl x:Name="TriggerPanel">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel HorizontalAlignment="Center" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-            </ItemsControl>
-        </StackPanel>
+            <StackPanel Grid.Column="0" VerticalAlignment="Top" HorizontalAlignment="Stretch">
+                <TextBlock Text="Height" Foreground="{StaticResource CForeground2}"
+                           FontSize="12" HorizontalAlignment="Center" />
+                <TextBlock x:Name="CurrentHeightLabel" Text="--" Foreground="{StaticResource CForeground1}"
+                           FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center"
+                           Margin="0,2,0,4" />
+                <Grid x:Name="HeightSliderContainer" HorizontalAlignment="Stretch">
+                    <Slider x:Name="HeightSlider" Orientation="Vertical" Height="150" Width="32"
+                        Minimum="0.1" Maximum="100" TickFrequency="1" TickPlacement="None"
+                        HorizontalAlignment="Center" IsEnabled="False"
+                            ValueChanged="HeightSlider_OnValueChanged">
+                        <Slider.RenderTransform>
+                            <TranslateTransform X="6" />
+                        </Slider.RenderTransform>
+                    </Slider>
+                    <Grid x:Name="LogarithmicMidpointOverlay" Visibility="Collapsed" IsHitTestVisible="False">
+                        <Rectangle Width="8" Height="1" Margin="0,0,2,0" Fill="{StaticResource CForeground1}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <TextBlock x:Name="LogarithmicMidpointLabel"
+                                   Foreground="{StaticResource CForeground2}" FontSize="8"
+                                   HorizontalAlignment="Left" VerticalAlignment="Center"
+                                   Margin="42,0,0,0" />
+                    </Grid>
+                </Grid>
+                <TextBlock x:Name="HeightRangeLabel" Text="0.20 - 5 m"
+                           Foreground="{StaticResource CForeground2}" FontSize="9"
+                           HorizontalAlignment="Center" Margin="0,4,0,4" />
+                </StackPanel>
+
+                <Rectangle Grid.Column="1" Style="{StaticResource VerticalDivider}" Margin="4,0" />
+
+                <StackPanel Grid.Column="2" VerticalAlignment="Top" HorizontalAlignment="Center">
+                <TextBlock Text="Presets" Foreground="{StaticResource CForeground2}"
+                       FontSize="12" HorizontalAlignment="Center" Margin="0,0,0,4" />
+                <StackPanel x:Name="HeightPresetPanel">
+                    <Border x:Name="MinimumHeightButton" Tag="min"
+                            Style="{StaticResource HeightPresetButton}"
+                            MouseLeftButtonUp="HeightPreset_OnClick" ToolTip="Set avatar height to minimum">
+                        <TextBlock Text="Min" Foreground="{x:Static common:FuviiStyles.WhiteSoftBrush}"
+                                   FontSize="11" TextAlignment="Center"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel x:Name="HeightPresetItems" />
+                    <Border x:Name="MaximumHeightButton" Tag="max"
+                            Style="{StaticResource HeightPresetButton}"
+                            MouseLeftButtonUp="HeightPreset_OnClick" ToolTip="Set avatar height to maximum">
+                        <TextBlock Text="Max" Foreground="{x:Static common:FuviiStyles.WhiteSoftBrush}"
+                                   FontSize="11" TextAlignment="Center"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+
+                <Rectangle Grid.Column="3" Style="{StaticResource VerticalDivider}" Margin="4,0" />
+
+                <ScrollViewer Grid.Column="4" VerticalAlignment="Top"
+                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel VerticalAlignment="Top">
+                    <TextBlock x:Name="EmptyLabel"
+                        Text="No triggers configured"
+                        Foreground="{DynamicResource CForeground2}"
+                        FontSize="14" HorizontalAlignment="Center"
+                        Visibility="Collapsed" />
+
+                    <ItemsControl x:Name="TriggerPanel">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel HorizontalAlignment="Center" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
     </Grid>
 </UserControl>

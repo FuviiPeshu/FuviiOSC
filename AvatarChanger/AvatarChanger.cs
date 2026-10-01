@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using FuviiOSC.AvatarChanger.UI;
 using VRCOSC.App.SDK.Modules;
 using VRCOSC.App.SDK.Parameters;
+using VRCOSC.App.SDK.VRChat;
 
 namespace FuviiOSC.AvatarChanger;
 
@@ -12,6 +13,9 @@ namespace FuviiOSC.AvatarChanger;
 [ModuleType(ModuleType.Generic)]
 public class AvatarChangerModule : Module
 {
+    private const float OSC_MIN_EYE_HEIGHT = 0.01f;
+    private const float OSC_MAX_EYE_HEIGHT = 10000f;
+
     private bool _pendingScale;
     private AvatarScaleMode _pendingScaleMode;
     private float _pendingFixedHeight;
@@ -25,22 +29,38 @@ public class AvatarChangerModule : Module
     private float _appliedHeight;
     private int _applyCount;
 
-    private enum ScalePhase
-    {
-        WaitingForNewAvatar,
-        WaitingForLoad,
-        Applied,
-    }
+    internal bool IsAvatarHeightControlAvailable => GetClient().IsInAvatar && GetClient().Avatar?.EyeHeightScalingAllowed == true;
+    internal float CurrentAvatarEyeHeight => GetClient().IsInAvatar ? GetClient().Avatar?.EyeHeight ?? 0f : 0f;
+    internal float AvatarSliderMinimum => GetRuntimeHeightRange().Minimum;
+    internal float AvatarSliderMaximum => GetRuntimeHeightRange().Maximum;
+    internal float AvatarEyeHeightMin => OSC_MIN_EYE_HEIGHT;
+    internal float AvatarEyeHeightMax => OSC_MAX_EYE_HEIGHT;
+    internal bool UseLogarithmicHeightSlider => GetSettingValue<bool>(AvatarChangerSetting.LogarithmicHeightSlider);
 
-    public event Action? TriggersChanged;
+    internal event Action? TriggersChanged;
+    internal event Action? HeightPresetsChanged;
 
     protected override void OnPreLoad()
     {
         CreateCustomSetting(AvatarChangerSetting.AvatarChangerTriggerInstances, new AvatarChangerModuleSetting());
+        CreateCustomSetting(AvatarChangerSetting.HeightPresets, new AvatarHeightPresetSetting(
+            "Height presets", "Optional avatar height presets (in meters, VRC can freeze/crash if scaled above 1000m)", [0.32f, 1f, 10f]));
 
         CreateState(AvatarChangerState.Default, "Default");
 
+        CreateTextBox(
+            AvatarChangerSetting.HeightSliderMinimum, "Height slider minimum", "Min height slider bound (in meters, VRC can freeze/crash if scaled above 1000m)", 0.2f);
+        CreateTextBox(
+            AvatarChangerSetting.HeightSliderMaximum, "Height slider maximum", "Max height slider bound (in meters, VRC can freeze/crash if scaled above 1000m)", 5f);
+        CreateToggle(
+            AvatarChangerSetting.LogarithmicHeightSlider, "Logarithmic height slider", "Use logarithmic scale for the runtime view height slider", false);
+
         CreateGroup("Avatar Change Triggers", "", AvatarChangerSetting.AvatarChangerTriggerInstances);
+        CreateGroup("Runtime Height Controls", "",
+            AvatarChangerSetting.HeightSliderMinimum,
+            AvatarChangerSetting.HeightSliderMaximum,
+            AvatarChangerSetting.LogarithmicHeightSlider,
+            AvatarChangerSetting.HeightPresets);
 
         SetRuntimeView(typeof(AvatarChangerRuntimeView));
     }
@@ -48,6 +68,7 @@ public class AvatarChangerModule : Module
     protected override void OnPostLoad()
     {
         GetSetting(AvatarChangerSetting.AvatarChangerTriggerInstances).OnSettingChange += () => TriggersChanged?.Invoke();
+        GetSetting(AvatarChangerSetting.HeightPresets).OnSettingChange += () => HeightPresetsChanged?.Invoke();
     }
 
     protected override Task<bool> OnModuleStart()
@@ -123,7 +144,7 @@ public class AvatarChangerModule : Module
                 }
 
                 float targetHeight = ComputeTargetHeight();
-                if (targetHeight < 0 || currentEyeHeight < 0.01f)
+                if (targetHeight < 0 || currentEyeHeight < OSC_MIN_EYE_HEIGHT)
                 {
                     _pendingScale = false;
                     return;
@@ -173,20 +194,60 @@ public class AvatarChangerModule : Module
                     LogDebug("Scale skipped - no previous eye height known");
                     return -1f;
                 }
-                return Math.Clamp(_pendingMatchHeight, 0.1f, 10000f);
+                return Math.Clamp(_pendingMatchHeight, OSC_MIN_EYE_HEIGHT, OSC_MAX_EYE_HEIGHT);
             case AvatarScaleMode.FixedHeight:
-                return Math.Clamp(_pendingFixedHeight, 0.1f, 10000f);
+                return Math.Clamp(_pendingFixedHeight, OSC_MIN_EYE_HEIGHT, OSC_MAX_EYE_HEIGHT);
             default:
                 return -1f;
         }
     }
 
-    public List<AvatarChangerTrigger> GetTriggers()
+    internal List<AvatarChangerTrigger> GetTriggers()
     {
         return GetSettingValue<List<AvatarChangerTrigger>>(AvatarChangerSetting.AvatarChangerTriggerInstances);
     }
 
-    public void TriggerAvatarChange(AvatarChangerTrigger trigger)
+    internal List<float> AvatarHeightPresets => ParseHeightPresets(GetSettingValue<List<string>>(AvatarChangerSetting.HeightPresets));
+
+    private static List<float> ParseHeightPresets(IEnumerable<string> values)
+    {
+        List<float> heights = [];
+
+        foreach (string value in values)
+        {
+            if (!AvatarHeightPresetSetting.TryParseHeight(value, out float height)) continue;
+
+            heights.Add(Math.Clamp(height, OSC_MIN_EYE_HEIGHT, OSC_MAX_EYE_HEIGHT));
+        }
+
+        return heights;
+    }
+
+    internal bool TrySetAvatarEyeHeight(float requestedHeight)
+    {
+        if (!GetClient().IsInAvatar) return false;
+
+        Avatar? avatar = GetClient().Avatar;
+        if (avatar is null || !avatar.EyeHeightScalingAllowed) return false;
+
+        float minimum = OSC_MIN_EYE_HEIGHT;
+        float maximum = OSC_MAX_EYE_HEIGHT;
+        avatar.SetEyeHeight(Math.Clamp(requestedHeight, minimum, maximum));
+
+        return true;
+    }
+
+    private HeightRange GetRuntimeHeightRange()
+    {
+        float minimum = Math.Clamp(GetSettingValue<float>(AvatarChangerSetting.HeightSliderMinimum), OSC_MIN_EYE_HEIGHT, OSC_MAX_EYE_HEIGHT);
+        float maximum = Math.Clamp(GetSettingValue<float>(AvatarChangerSetting.HeightSliderMaximum), OSC_MIN_EYE_HEIGHT, OSC_MAX_EYE_HEIGHT);
+
+        return (minimum <= maximum)
+            ? new HeightRange(minimum, maximum)
+            : new HeightRange(OSC_MIN_EYE_HEIGHT, OSC_MAX_EYE_HEIGHT);
+    }
+
+    internal void TriggerAvatarChange(AvatarChangerTrigger trigger)
     {
         AvatarScaleMode scaleMode = (AvatarScaleMode)trigger.ScaleMode.Value;
         string avatarId = trigger.AvatarId.Value;
@@ -215,11 +276,24 @@ public class AvatarChangerModule : Module
 
     private enum AvatarChangerSetting
     {
-        AvatarChangerTriggerInstances
+        AvatarChangerTriggerInstances,
+        HeightSliderMinimum,
+        HeightSliderMaximum,
+        LogarithmicHeightSlider,
+        HeightPresets
     }
 
     private enum AvatarChangerState
     {
         Default
     }
+
+    private enum ScalePhase
+    {
+        WaitingForNewAvatar,
+        WaitingForLoad,
+        Applied,
+    }
+
+    private record struct HeightRange(float Minimum, float Maximum);
 }
