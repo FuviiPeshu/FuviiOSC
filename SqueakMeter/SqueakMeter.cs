@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
@@ -51,18 +50,26 @@ public class SqueakMeterModule : Module
     public float CurrentDirection => _direction;
     // Audio capture fields
     public AudioDeviceNotificationClient? notificationClient = new AudioDeviceNotificationClient();
-    public readonly MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
     public MMDevice? activeDevice;
     public WasapiLoopbackCapture? capture;
+    public string? ActiveDeviceId { get; private set; }
+    public string? ActiveDeviceName { get; private set; }
+    private readonly object _audioDeviceLock = new();
+    private MMDeviceEnumerator? _notificationEnumerator;
+    private bool _notificationRegistered;
 
     [ModulePersistent("disabledDeviceList")]
     public List<AudioDeviceInfo> disabledDeviceList { get; set; } = [];
     [ModulePersistent("selectedDevice")]
     public AudioDeviceInfo? selectedDevice { get; set; } = null;
+    [ModulePersistent("audioDeviceOverrideEnabled")]
+    public bool audioDeviceOverrideEnabled { get; set; }
 
     protected override void OnPreLoad()
     {
-        enumerator.RegisterEndpointNotificationCallback(notificationClient);
+        AudioDeviceNotificationClient client = notificationClient ??= new AudioDeviceNotificationClient();
+        client.DefaultDeviceChanged -= OnDefaultDeviceChanged;
+        client.DefaultDeviceChanged += OnDefaultDeviceChanged;
 
         CreateSlider(SqueakMeterSetting.SmoothScalar, "Smooth scalar", "Scalar for smoothing values (default: 0.16)", 0.16f, 0.0f, 0.99f, 0.01f);
         CreateSlider(SqueakMeterSetting.Gain, "Gain", "Scalar for volume (default: 2.0)", 2.0f, 0.1f, 10, 0.1f);
@@ -81,20 +88,28 @@ public class SqueakMeterModule : Module
 
     protected override Task<bool> OnModuleStart()
     {
-        if (notificationClient == null)
-            notificationClient = new AudioDeviceNotificationClient();
+        AudioDeviceNotificationClient client = notificationClient ??= new AudioDeviceNotificationClient();
 
         try
         {
-            enumerator.RegisterEndpointNotificationCallback(notificationClient);
+            if (!_notificationRegistered)
+            {
+                _notificationEnumerator = new MMDeviceEnumerator();
+                _notificationEnumerator.RegisterEndpointNotificationCallback(client);
+                _notificationRegistered = true;
+            }
         }
         catch (Exception error)
         {
             LogDebug($"Failed to register audio device notification callback: {error.Message}");
+            _notificationEnumerator?.Dispose();
+            _notificationEnumerator = null;
         }
 
-        if (selectedDevice != null)
-            SetCaptureDevice(selectedDevice.ID);
+        if (audioDeviceOverrideEnabled && selectedDevice != null && SetCaptureDevice(selectedDevice.ID, false))
+            return Task.FromResult(true);
+
+        SetDefaultCaptureDevice();
 
         return Task.FromResult(true);
     }
@@ -103,18 +118,21 @@ public class SqueakMeterModule : Module
     {
         try
         {
-            if (notificationClient != null)
+            if (notificationClient != null && _notificationRegistered && _notificationEnumerator != null)
             {
                 try
                 {
-                    enumerator.UnregisterEndpointNotificationCallback(notificationClient);
+                    _notificationEnumerator.UnregisterEndpointNotificationCallback(notificationClient);
+                    _notificationRegistered = false;
                 }
                 catch (Exception error)
                 {
                     LogDebug($"Failed to unregister audio device notification callback: {error.Message}");
                 }
-                notificationClient = null;
             }
+
+            _notificationEnumerator?.Dispose();
+            _notificationEnumerator = null;
 
             CleanupCapture();
             // Do NOT dispose enumerator here - it's reused across start/stop cycles and the UI runtime may still call stuff
@@ -129,16 +147,21 @@ public class SqueakMeterModule : Module
 
     private void CleanupCapture()
     {
-        if (capture != null)
+        lock (_audioDeviceLock)
         {
-            capture.DataAvailable -= OnDataAvailable;
-            capture.StopRecording();
-            capture.Dispose();
-            capture = null;
-        }
+            if (capture != null)
+            {
+                capture.DataAvailable -= OnDataAvailable;
+                capture.StopRecording();
+                capture.Dispose();
+                capture = null;
+            }
 
-        activeDevice?.Dispose();
-        activeDevice = null;
+            activeDevice?.Dispose();
+            activeDevice = null;
+            ActiveDeviceId = null;
+            ActiveDeviceName = null;
+        }
     }
 
     private void OnDataAvailable(object? sender, WaveInEventArgs args)
@@ -255,40 +278,157 @@ public class SqueakMeterModule : Module
         }
     }
 
-    public MMDeviceCollection GetAudioOutputDevices()
+    public List<AudioDeviceInfo> GetAudioOutputDevices()
     {
-        return enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+        lock (_audioDeviceLock)
+        {
+            MMDeviceEnumerator deviceEnumerator = new();
+            try
+            {
+                MMDeviceCollection devices = deviceEnumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+                List<AudioDeviceInfo> deviceInfos = [];
+                foreach (MMDevice device in devices)
+                {
+                    try
+                    {
+                        deviceInfos.Add(new AudioDeviceInfo(device.ID, device.FriendlyName));
+                    }
+                    finally
+                    {
+                        device.Dispose();
+                    }
+                }
+                return deviceInfos;
+            }
+            finally
+            {
+                deviceEnumerator.Dispose();
+            }
+        }
     }
 
-    public void SetCaptureDevice(string? deviceId)
+    public string? GetDefaultAudioOutputDeviceId()
     {
-        MMDevice? device = GetAudioOutputDevices().FirstOrDefault(d => d.ID == deviceId);
+        lock (_audioDeviceLock)
+        {
+            MMDeviceEnumerator deviceEnumerator = new();
+            MMDevice? defaultDevice = null;
+            try
+            {
+                defaultDevice = deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+                return defaultDevice.ID;
+            }
+            catch (Exception error)
+            {
+                LogDebug($"Failed to get the system audio device: {error.Message}");
+                return null;
+            }
+            finally
+            {
+                defaultDevice?.Dispose();
+                deviceEnumerator.Dispose();
+            }
+        }
+    }
 
+    public bool SetDefaultCaptureDevice()
+    {
+        string? defaultDeviceId = GetDefaultAudioOutputDeviceId();
+        if (defaultDeviceId == null)
+        {
+            _enabled = false;
+            return false;
+        }
+
+        return SetCaptureDevice(defaultDeviceId, false);
+    }
+
+    public void SetAudioDeviceOverride(bool enabled, string? preferredDeviceId = null)
+    {
+        audioDeviceOverrideEnabled = enabled;
+        if (!enabled)
+        {
+            SetDefaultCaptureDevice();
+            return;
+        }
+
+        string? deviceId = preferredDeviceId ?? selectedDevice?.ID;
+        if (deviceId == null || !SetCaptureDevice(deviceId))
+            SetDefaultCaptureDevice();
+    }
+
+    public bool SetOverrideAudioDevice(AudioDeviceInfo device)
+    {
+        audioDeviceOverrideEnabled = true;
+        selectedDevice = device;
+        return SetCaptureDevice(device.ID);
+    }
+
+    public bool SetCaptureDevice(string? deviceId, bool notifyDeviceError = true)
+    {
+        lock (_audioDeviceLock)
+        {
+            try
+            {
+                MMDevice? device = FindAudioOutputDevice(deviceId);
+                if (device == null)
+                    throw new ArgumentNullException(nameof(device), "Device not found");
+
+                CleanupCapture();
+                activeDevice = device;
+                ActiveDeviceId = activeDevice.ID;
+                ActiveDeviceName = activeDevice.FriendlyName;
+
+                if (activeDevice.AudioEndpointVolume.HardwareSupport == 0)
+                    throw new NotSupportedException($"Selected device '{activeDevice.FriendlyName}' does not support capturing.");
+
+                capture = new WasapiLoopbackCapture(activeDevice);
+                capture.DataAvailable += OnDataAvailable;
+                capture.WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
+                _bytesPerSample = capture.WaveFormat.BitsPerSample / capture.WaveFormat.BlockAlign;
+                capture.StartRecording();
+                _enabled = true;
+            }
+            catch (Exception error)
+            {
+                LogDebug($"Audio setup failed: {error.Message}");
+                CleanupCapture();
+                if (notifyDeviceError)
+                    notificationClient?.OnSelectedDeviceError(deviceId ?? "unknown", $"Audio setup failed: {error.Message}");
+                activeDevice = null;
+                _enabled = false;
+            }
+            return _enabled;
+        }
+    }
+
+    private MMDevice? FindAudioOutputDevice(string? deviceId)
+    {
+        if (string.IsNullOrEmpty(deviceId)) return null;
+
+        MMDeviceEnumerator deviceEnumerator = new();
         try
         {
-            if (device == null)
-                throw new ArgumentNullException(nameof(device), "Device not found");
+            MMDeviceCollection devices = deviceEnumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+            foreach (MMDevice device in devices)
+            {
+                if (device.ID == deviceId) return device;
 
-            CleanupCapture();
-            activeDevice = device;
-
-            if (activeDevice.AudioEndpointVolume.HardwareSupport == 0)
-                throw new NotSupportedException($"Selected device '{activeDevice.FriendlyName}' does not support capturing.");
-
-            capture = new WasapiLoopbackCapture(activeDevice);
-            capture.DataAvailable += OnDataAvailable;
-            capture.WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
-            _bytesPerSample = capture.WaveFormat.BitsPerSample / capture.WaveFormat.BlockAlign;
-            capture.StartRecording();
-            _enabled = true;
+                device.Dispose();
+            }
+            return null;
         }
-        catch (Exception error)
+        finally
         {
-            LogDebug($"Audio setup failed: {error.Message}");
-            notificationClient?.OnSelectedDeviceError(deviceId ?? "unknown", $"Audio setup failed: {error.Message}");
-            activeDevice = null;
-            _enabled = false;
+            deviceEnumerator.Dispose();
         }
+    }
+
+    private void OnDefaultDeviceChanged(string deviceId)
+    {
+        if (audioDeviceOverrideEnabled || ActiveDeviceId == deviceId) return;
+
+        SetCaptureDevice(deviceId, false);
     }
 
     private float GetSmoothScalar() => GetSettingValue<float>(SqueakMeterSetting.SmoothScalar);

@@ -22,12 +22,18 @@ public record AudioDeviceInfo(string ID, string FriendlyName, bool IsEnabled = t
 public class AudioDeviceNotificationClient : IMMNotificationClient
 {
     public event Action? DevicesChanged;
+    public event Action<string>? DefaultDeviceChanged;
     public event Action<string, string>? DeviceError;
 
     public void OnDeviceStateChanged(string deviceId, DeviceState newState) => DevicesChanged?.Invoke();
     public void OnDeviceAdded(string deviceId) => DevicesChanged?.Invoke();
     public void OnDeviceRemoved(string deviceId) => DevicesChanged?.Invoke();
-    public void OnDefaultDeviceChanged(DataFlow flow, Role role, string defaultDeviceId) => DevicesChanged?.Invoke();
+    public void OnDefaultDeviceChanged(DataFlow flow, Role role, string defaultDeviceId)
+    {
+        DevicesChanged?.Invoke();
+        if (flow == DataFlow.Render && role == Role.Multimedia)
+            DefaultDeviceChanged?.Invoke(defaultDeviceId);
+    }
     public void OnPropertyValueChanged(string deviceId, PropertyKey key) => DevicesChanged?.Invoke();
     public void OnSelectedDeviceError(string deviceId, string errorMessage) => DeviceError?.Invoke(deviceId, errorMessage);
 }
@@ -39,6 +45,7 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
     public Observable<string> SelectedDeviceId { get; set; } = new();
 
     private bool suppressSelectionChanged;
+    private bool suppressOverrideChanged;
     private string? _errorMessage;
     public string? ErrorMessage
     {
@@ -97,6 +104,10 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
         Module = module;
         Module.disabledDeviceList.ForEach(device => DisabledDevices.Add(device));
 
+        suppressOverrideChanged = true;
+        OverrideAudioDeviceCheckBox.IsChecked = Module.audioDeviceOverrideEnabled;
+        suppressOverrideChanged = false;
+
         if (Module.notificationClient == null)
             Module.notificationClient = new AudioDeviceNotificationClient();
 
@@ -113,7 +124,7 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
 
     public void DeviceErrorOccurred(string deviceId, string errorMessage)
     {
-        AudioDeviceInfo? device = AudioDevices.First(d => d.ID == deviceId);
+        AudioDeviceInfo? device = AudioDevices.FirstOrDefault(d => d.ID == deviceId);
         if (device == null) return;
 
         if (!DisabledDevices.Any(d => d.ID == deviceId))
@@ -154,7 +165,7 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
         {
             ErrorMessage = null;
 
-            MMDeviceCollection audioDevices = Module.GetAudioOutputDevices();
+            List<AudioDeviceInfo> audioDevices = Module.GetAudioOutputDevices();
             if (audioDevices.Count == 0)
             {
                 Module.LogDebug("No audio devices found.");
@@ -162,26 +173,35 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
                 return;
             }
 
-            string previousSelectedId = Module.selectedDevice?.ID ?? SelectedDeviceId.Value;
-
             suppressSelectionChanged = true;
             SelectedDeviceId.Value = String.Empty;
             AudioDevices.Clear();
-            foreach (MMDevice device in audioDevices)
+            foreach (AudioDeviceInfo device in audioDevices)
             {
                 bool isEnabled = !DisabledDevices.Any(d => d.ID == device.ID);
-                AudioDevices.Add(new AudioDeviceInfo(device.ID, device.FriendlyName, isEnabled));
+                AudioDevices.Add(device with { IsEnabled = isEnabled });
             }
 
-            // Fallback to first device if current selection is no longer available
-            if (Module.activeDevice == null || !audioDevices.Any(d => d.ID == previousSelectedId))
+            if (Module.ActiveDeviceId == null)
             {
-                Module.SetCaptureDevice(audioDevices[0].ID);
+                bool captureStarted = false;
+                if (Module.audioDeviceOverrideEnabled && Module.selectedDevice != null)
+                    captureStarted = Module.SetCaptureDevice(Module.selectedDevice.ID, false);
+
+                if (!captureStarted)
+                    Module.SetDefaultCaptureDevice();
             }
-            else
-            {
-                SelectedDeviceId.Value = previousSelectedId;
-            }
+
+            string? displayDeviceId = Module.audioDeviceOverrideEnabled
+                ? Module.selectedDevice?.ID ?? Module.ActiveDeviceId
+                : Module.ActiveDeviceId;
+            if (displayDeviceId == null || !audioDevices.Any(d => d.ID == displayDeviceId))
+                displayDeviceId = Module.ActiveDeviceId;
+
+            if (displayDeviceId != null && audioDevices.Any(d => d.ID == displayDeviceId))
+                SelectedDeviceId.Value = displayDeviceId;
+
+            UpdateAudioSourceLabel();
             suppressSelectionChanged = false;
         }
         catch (Exception error)
@@ -212,8 +232,7 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
         if (comboBox.SelectedItem is AudioDeviceInfo selectedItem)
         {
             SelectedDeviceId.Value = selectedItem.ID;
-            Module.selectedDevice = selectedItem;
-            Module.SetCaptureDevice(selectedItem.ID);
+            Module.SetOverrideAudioDevice(selectedItem);
             Module.LogDebug($"Selected audio device: {selectedItem.FriendlyName} ({selectedItem.ID})");
         }
         else
@@ -223,6 +242,38 @@ public partial class AudioDeviceModuleRuntimeView : INotifyPropertyChanged
             ErrorMessage = "No audio device selected.";
             Module.LogDebug("No audio device selected.");
         }
+    }
+
+    private void OverrideAudioDevice_OnChanged(object sender, RoutedEventArgs e)
+    {
+        if (suppressOverrideChanged) return;
+
+        bool enabled = OverrideAudioDeviceCheckBox.IsChecked == true;
+        string? preferredDeviceId = enabled ? SelectedDeviceId.Value : null;
+
+        if (enabled && preferredDeviceId != null)
+        {
+            AudioDeviceInfo? preferredDevice = AudioDevices.FirstOrDefault(device => device.ID == preferredDeviceId);
+            if (preferredDevice != null)
+            {
+                Module.SetOverrideAudioDevice(preferredDevice);
+                UpdateDeviceList();
+                return;
+            }
+        }
+
+        Module.SetAudioDeviceOverride(enabled, preferredDeviceId);
+        UpdateDeviceList();
+    }
+
+    private void UpdateAudioSourceLabel()
+    {
+        string? activeDeviceId = Module.ActiveDeviceId;
+        AudioDeviceInfo? activeDevice = AudioDevices.FirstOrDefault(device => device.ID == activeDeviceId);
+        string deviceName = activeDevice?.FriendlyName ?? Module.ActiveDeviceName ?? "Unavailable";
+        AudioSourceLabel.Text = Module.audioDeviceOverrideEnabled
+            ? $"Override: {deviceName}"
+            : $"System default: {deviceName}";
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

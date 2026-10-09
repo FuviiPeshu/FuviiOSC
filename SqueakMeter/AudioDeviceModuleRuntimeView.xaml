@@ -21,17 +21,31 @@
 
         <!-- Left: Device selection & disabled list -->
         <StackPanel Grid.Column="0" Margin="0,0,8,0">
+            <CheckBox x:Name="OverrideAudioDeviceCheckBox"
+                      Content="Override system audio device"
+                      Foreground="{StaticResource CForeground1}"
+                      FontSize="14"
+                      Margin="0,0,0,2"
+                      Checked="OverrideAudioDevice_OnChanged"
+                      Unchecked="OverrideAudioDevice_OnChanged" />
+            <TextBlock x:Name="AudioSourceLabel"
+                       Text="System default"
+                       Foreground="{StaticResource CForeground2}"
+                       FontSize="12"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,4" />
             <ComboBox
-            x:Name="DeviceSelection"
-            ItemsSource="{Binding AudioDevices}"
-            SelectedValue="{Binding SelectedDeviceId.Value, Mode=TwoWay}"
-            DisplayMemberPath="FriendlyName"
-            SelectedValuePath="ID"
-            SelectionChanged="DeviceSelection_OnSelectionChanged"
-            Background="{StaticResource CBackground3}"
-            FontSize="16"
-            VerticalAlignment="Top"
-            Margin="0 5">
+                x:Name="DeviceSelection"
+                ItemsSource="{Binding AudioDevices}"
+                SelectedValue="{Binding SelectedDeviceId.Value, Mode=TwoWay}"
+                IsEnabled="{Binding IsChecked, ElementName=OverrideAudioDeviceCheckBox}"
+                DisplayMemberPath="FriendlyName"
+                SelectedValuePath="ID"
+                SelectionChanged="DeviceSelection_OnSelectionChanged"
+                Background="{StaticResource CBackground3}"
+                FontSize="16"
+                VerticalAlignment="Top"
+                Margin="0 4">
             <ComboBox.ItemContainerStyle>
                 <Style TargetType="ComboBoxItem">
                     <Setter Property="IsEnabled" Value="True"/>
